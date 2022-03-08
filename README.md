@@ -3,7 +3,7 @@
 
 Installation with 
 ```bash
-git clone --recurse-submodules git@github.com:Priesemann-Group/covid19_soccer.git
+git clone --recurse-submodules git@github.com:Priesemann-Group/causal_covid.git
 ```
 ## Notes:
 You need `python>3.8`.
