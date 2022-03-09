@@ -35,7 +35,7 @@ from covid19_inference.model import (
 
 begin = datetime.datetime(2021, 8, 1)
 end = datetime.datetime(2021, 10, 1)
-file = "/home/jdehning/repositories/causal_covid/data/2022-02-09_16-39-19_young_to_old_cap/scenario_export/observed_infection_data.csv"
+file = "../data/2022-02-09_16-39-19_young_to_old_cap/scenario_export/observed_infection_data.csv"
 cases_df = load_cases(file, begin, end)
 cases_df = cases_df.sum(axis=1)
 
