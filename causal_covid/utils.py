@@ -64,7 +64,7 @@ def set_missing_priors_with_default(priors_dict, default_priors):
             log.info(f"{prior_name} was set to default value {value}")
 
 
-def day_to_week_matrix(sim_begin, sim_end, weeks, fill=False):
+def day_to_week_matrix(sim_begin, sim_end, weeks, fill=False, end=False):
     """
     Returns the matrix mapping a day to an week.
     Does more or less the same as pandas resample but we can use it in 
@@ -86,6 +86,9 @@ def day_to_week_matrix(sim_begin, sim_end, weeks, fill=False):
     for i, d in enumerate(days):
         for j, week_begin in enumerate(weeks):
             week_end = week_begin + timedelta(days=7)
+            if end:
+                week_end = week_begin + timedelta(days=1)
+                week_begin = week_end - timedelta(days=7)
             if d >= week_begin and d < week_end:
                 m[i, j] = 1
 
