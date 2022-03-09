@@ -45,7 +45,7 @@ trace = pm.sample(model=model, return_inferencedata=True)
 
 plt.fill_between(np.arange(9), *np.percentile(trace.posterior.weekly_cases, axis=(0,1),q=(25,75)), alpha=0.3, color="tab:blue", label="model")
 plt.fill_between(np.arange(9), *np.percentile(trace.posterior.weekly_cases, axis=(0,1),q=(2.5,97.5)), alpha=0.3, color="tab:blue")
-plt.plot(np.sum(np.array(cases_df), axis=1), "d", label='data')
+plt.plot(np.array(cases_df), "d", label='data')
 plt.xlabel("week number")
 plt.ylabel("incidence")
 plt.legend()
