@@ -92,33 +92,6 @@ def load_cases(file, begin, end, num_age_groups=3, **kwargs):
     return cases_summed
 
 
-def sum_population(df, num_age_groups):
-    if num_age_groups == 3:
-        sum_over = [
-            ("0-19", "20-29"),
-            ("30-39", "40-49", "50-59"),
-            ("60-69", "70-79", "80-89", "90+"),
-        ]
-        new_age_ranges = ["0-29", "30-59", "60+"]
-    else:
-        raise RuntimeError("Unknown number of age groups")
-
-    def filter_func(i):
-        age = df.loc[i].age_group
-        for i, ages in enumerate(sum_over):
-            if age in ages:
-                return 0, new_age_ranges[i]
-        else:
-
-            raise RuntimeError(f"age-group {age} not known")
-
-    df = df.groupby(by=filter_func).sum()
-    df.insert(0, "age_group", list(zip(*df.index))[1])
-    df = df.reset_index(drop=True)
-    # df.index = pd.MultiIndex.from_tuples(df.index, names=["date", "Age_group"])
-    return df
-
-
 def load_vaccinations(
     vaccination_file, population_file, begin, end, num_age_groups=3, **kwargs
 ):
@@ -138,7 +111,7 @@ def load_vaccinations(
         vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] *= size
 
     vaccinations = sum_age_groups(vaccinations, num_age_groups=num_age_groups)
-    population = sum_population(population, num_age_groups=num_age_groups)
+    population = sum_age_groups(population, num_age_groups=num_age_groups)
 
     for age, size in population.values.tolist():
         vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] /= size
