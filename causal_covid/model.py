@@ -17,7 +17,7 @@ sys.path.append("../covid19_inference")
 sys.path.append("..")
 
 import data
-from .utils import get_cps, day_to_week_matrix
+from .utils import get_cps, day_to_week_matrix, day_to_week_transform
 from covid19_inference import Cov19Model
 from covid19_inference.model import (
     lambda_t_with_sigmoids,
@@ -96,11 +96,7 @@ def create_model_multidmensional(
             name_lambda_t="base_R_t",
         )
 
-        week_mapping = day_to_week_matrix(
-            this_model.sim_begin, this_model.sim_end, cases_df.index, end=True,
-        ).T  # Has shape (num_weeks, num_days)
-
-        E_begin = uncorrelated_prior_E(n_data_points_used=2)/7
+        E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
 
         C = np.array([[1, 0.1, 0.1], [0.1, 1, 0.1], [0.1, 0.1, 1]])
 
@@ -112,24 +108,15 @@ def create_model_multidmensional(
             pr_new_E_begin=E_begin,
         )  # has shape (num_days, num_age_groups)
 
-        # Delay the cases by a lognormal reporting delay and add them as a trace variable
-        new_cases = delay_cases(
-            cases=new_cases,
-            name_cases="delayed_cases",
-            pr_mean_of_median=pr_delay,
-            pr_median_of_width=0.3,
-            seperate_on_axes=False,
-            num_seperated_axes=num_age_groups,
+        # Transform to weekly cases and add a delay of 6 days
+        weekly_cases = day_to_week_transform(
+            new_cases,
+            arr_begin=this_model.sim_begin,
+            arr_end=this_model.sim_end,
+            weeks=cases_df.index,
+            end=True,
+            additional_delay=6,
         )
-
-        """
-
-        # Modulate the inferred cases by a abs(sin(x)) function, to account for weekend effects
-        # Also adds the "new_cases" variable to the trace that has all model features.
-        new_cases_modulated = week_modulation(cases=new_cases, name_cases="new_cases")
-        """
-        # Define the likelihood, uses the new_cases_obs set as model parameter
-        weekly_cases = tt.dot(week_mapping, new_cases)
 
         weekly_cases = pm.Deterministic("weekly_cases", weekly_cases)
 
@@ -183,33 +170,22 @@ def create_model_single_dimension(cases_df, N_population):
             name_lambda_t="base_R_t",
         )
 
-        week_mapping = day_to_week_matrix(
-            this_model.sim_begin, this_model.sim_end, cases_df.index, end=True,
-        ).T  # Has shape (num_weeks, num_days)
-
-        E_begin = uncorrelated_prior_E(n_data_points_used=2)/7
+        E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
         new_cases = kernelized_spread(
             lambda_t_log=R_t_log, pr_new_E_begin=E_begin,
         )  # has shape (num_days, num_age_groups)
 
-        # Delay the cases by a lognormal reporting delay and add them as a trace variable
-        new_cases = delay_cases(
-            cases=new_cases,
-            name_cases="delayed_cases",
-            pr_mean_of_median=pr_delay,
-            pr_median_of_width=0.3,
+        # Transform to weekly cases and add a delay of 6 days
+        weekly_cases = day_to_week_transform(
+            new_cases,
+            arr_begin=this_model.sim_begin,
+            arr_end=this_model.sim_end,
+            weeks=cases_df.index,
+            end=True,
+            additional_delay=6,
         )
-
-        """
-
-        # Modulate the inferred cases by a abs(sin(x)) function, to account for weekend effects
-        # Also adds the "new_cases" variable to the trace that has all model features.
-        new_cases_modulated = week_modulation(cases=new_cases, name_cases="new_cases")
-        """
-        # Define the likelihood, uses the new_cases_obs set as model parameter
-        weekly_cases = tt.dot(week_mapping, new_cases)
 
         weekly_cases = pm.Deterministic("weekly_cases", weekly_cases)
 

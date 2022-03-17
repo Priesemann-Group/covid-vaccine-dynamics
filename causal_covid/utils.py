@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 
+import theano.tensor as tt
+
 log = logging.getLogger(__name__)
 
 # Define changepoints (we define all vars to surpress the automatic prints)
@@ -62,6 +64,43 @@ def set_missing_priors_with_default(priors_dict, default_priors):
         if prior_name not in priors_dict:
             priors_dict[prior_name] = value
             log.info(f"{prior_name} was set to default value {value}")
+
+
+def day_to_week_transform(
+    arr, arr_begin, arr_end, weeks, end=False, additional_delay=0
+):
+    """
+    Transforms an array with daily observations to one with weekly observations
+    Parameters
+    ----------
+    arr: the array to transform with daily observations
+    arr_begin: datetime, day of the first element of arr
+    arr_end: datetime, day of the last element of arr
+    weeks: array of timedelta days at which the returned variable should have its weeks
+    end: whether the days in weeks encode the beginning or the end of the week
+    additional_delay: int: additional delay.
+
+    Returns
+    -------
+
+    """
+    days = pd.date_range(arr_begin, arr_end)
+    if end:
+        end_week = weeks - timedelta(days=additional_delay)
+        begin_week = weeks - timedelta(days=7) - timedelta(days=additional_delay)
+    else:
+        begin_week = weeks - timedelta(days=1) - timedelta(days=additional_delay)
+        end_week = weeks + timedelta(days=6) - timedelta(days=additional_delay)
+
+    i_beg = []
+    for d in begin_week:
+        i_beg.append(days.get_loc(d))
+    i_end = []
+    for d in end_week:
+        i_end.append(days.get_loc(d))
+    cumsum_arr = tt.cumsum(arr, axis=0)
+    transformed = cumsum_arr[i_end] - cumsum_arr[i_beg]
+    return transformed
 
 
 def day_to_week_matrix(sim_begin, sim_end, weeks, fill=False, end=False):
