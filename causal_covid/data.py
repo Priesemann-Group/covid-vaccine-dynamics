@@ -25,6 +25,17 @@ def sum_age_groups(df, num_age_groups):
     #df.index = pd.MultiIndex.from_tuples(df.index, names=["date", "Age_group"])
     return df
 
+def sum_age_groups_np(array, num_age_groups):
+    if num_age_groups == 3:
+        sum_over = [(0,1),(2,3,4),(5,6,7,8)]
+    else:
+        raise RuntimeError("Unknown number of age groups")
+
+    new = np.empty(len(sum_over), *array.shape[1:])
+    for i, ages in enumerate(sum_over):
+        new[i] = array[ages].sum(axis=0)
+    return new
+
 def filter_time(df, begin, end):
     return df[(df.date >= begin) & (df.date <= end)]
 
@@ -73,6 +84,9 @@ def load_vaccinations(vaccination_file, population_file, begin, end, **kwargs):
     vaccinations = pd.read_csv(vaccination_file, **kwargs)
     vaccinations.rename(columns={"Sunday_date": "date", "Age_group": "age_group"}, inplace=True)
     vaccinations.date = pd.to_datetime(vaccinations.date)
+
+    U_2 = np.load(U2_file)
+    U_3 = np.load(U3_file)
 
     for age, size in population.values.tolist():
         vaccinations.loc[vaccinations.age_group == age,"unvaccinated_share":] *= size
