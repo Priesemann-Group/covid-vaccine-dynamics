@@ -79,7 +79,7 @@ def create_model_multidmensional(
 
     pr_delay = 10
 
-    pr_median_lambda = 1.0
+    pr_median_lambda = 2.0
 
     with Cov19Model(**params) as this_model:
 
@@ -170,6 +170,78 @@ def create_model_single_dimension(cases_df, N_population):
             name_lambda_t="base_R_t",
         )
 
+        E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
+
+        # Put the lambdas together unknown and known into one tensor (shape: t,v)
+        new_cases = kernelized_spread(
+            lambda_t_log=R_t_log, pr_new_E_begin=E_begin,
+        )  # has shape (num_days, num_age_groups)
+
+        # Transform to weekly cases and add a delay of 6 days
+        weekly_cases = day_to_week_transform(
+            new_cases,
+            arr_begin=this_model.sim_begin,
+            arr_end=this_model.sim_end,
+            weeks=cases_df.index,
+            end=True,
+            additional_delay=6,
+        )
+
+        weekly_cases = pm.Deterministic("weekly_cases", weekly_cases)
+
+        sigma_obs = pm.HalfCauchy("sigma_obs", beta=100)
+        sigma = (
+            tt.abs_(weekly_cases + 1) ** 0.5 * sigma_obs
+        )  # offset and tt.abs to avoid nans
+        data_obs = this_model.new_cases_obs
+        pm.StudentT(
+            name="_new_cases_studentT",
+            nu=4,
+            mu=weekly_cases[~np.isnan(data_obs)],
+            sigma=sigma[~np.isnan(data_obs)],
+            observed=data_obs[~np.isnan(data_obs)],
+        )
+
+        return this_model
+
+def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_population):
+    new_cases_obs = np.array(cases_df)
+    data_begin = cases_df.index[0] - datetime.timedelta(days=6)
+    data_end = cases_df.index[-1]
+
+    # Params for the model
+    params = {
+        "new_cases_obs": new_cases_obs,
+        "data_begin": data_begin,
+        "data_end": data_end,
+        "fcast_len": 14,
+        "diff_data_sim": 14,
+        "N_population": N_population,
+    }
+
+    pr_delay = 10
+
+    pr_median_lambda = 1.0
+
+    with Cov19Model(**params) as this_model:
+
+        # Infectiability
+        infectiability_log = np.log(np.array(infectiability_df))
+        infectiability_log = day_to_week_matrix(this_model.sim_begin, this_model.sim_end, infectiability_df.index, end=True).dot(infectiability_log)
+        # Get base reproduction number/spreading rate
+        R_t_log_base = lambda_t_with_sigmoids(
+            change_points_list=get_cps(
+                this_model.data_begin,
+                this_model.sim_end,
+                interval=14,
+                pr_median_transient_len=6,
+                pr_sigma_transient_len=2,
+            ),
+            pr_median_lambda_0=pr_median_lambda,
+            name_lambda_t="base_R_t",
+        )
+        R_t_log = R_t_log_base + infectiability_log
+        
         E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)

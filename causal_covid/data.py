@@ -33,6 +33,11 @@ def sum_age_groups(df, num_age_groups):
             ("60-69", "70-79", "80-89", "90+"),
         ]
         new_age_ranges = ["0-29", "30-59", "60+"]
+    elif num_age_groups == 1:
+        sum_over = [
+            ("0-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80-89", "90+")
+        ]
+        new_age_ranges = ["0+"]
     else:
         raise RuntimeError("Unknown number of age groups")
 
@@ -57,12 +62,16 @@ def sum_age_groups(df, num_age_groups):
     return df
 
 def sum_age_groups_np(array, num_age_groups):
-    if num_age_groups == 3:
-        sum_over = [(0,1),(2,3,4),(5,6,7,8)]
+    if num_age_groups == 9:
+        sum_over = [[0,],[1,],[2,],[3,],[4,],[5,],[6,],[7,],[8,]]
+    elif num_age_groups == 3:
+        sum_over = [[0,1],[2,3,4],[5,6,7,8]]
+    elif num_age_groups == 1:
+        sum_over = [[0,1,2,3,4,5,6,7,8]]
     else:
         raise RuntimeError("Unknown number of age groups")
 
-    new = np.empty(len(sum_over), *array.shape[1:])
+    new = np.empty((len(sum_over), *array.shape[1:]))
     for i, ages in enumerate(sum_over):
         new[i] = array[ages].sum(axis=0)
     return new
@@ -102,7 +111,7 @@ def load_cases(file, begin, end, num_age_groups=3, **kwargs):
     return cases_summed
 
 
-def load_infectiability(vaccination_file, population_file, U2_file, U3_file, waning_file, begin, end, **kwargs):
+def load_infectiability(vaccination_file, population_file, U2_file, U3_file, waning_file, begin, end, num_age_groups=3, **kwargs):
     # Returns 4 dataframes (unvaccinated_share, one_dose_share, two, three), each of the same form as the case number dfs 
     
     population = load_population(
@@ -124,15 +133,15 @@ def load_infectiability(vaccination_file, population_file, U2_file, U3_file, wan
         for i in range(U_3.shape[1]):
             U_3[age,i,:] *= U_2[age,:,i].sum()
 
-    U_2 = sum_age_groups_np(U_2, 3)
-    U_3 = sum_age_groups_np(U_3, 3)
+    U_2 = sum_age_groups_np(U_2, num_age_groups)
+    U_3 = sum_age_groups_np(U_3, num_age_groups)
 
     for age, size in population.values.tolist():
         vaccinations.loc[vaccinations.age_group == age,"unvaccinated_share":] *= size
     
-    vaccinations = sum_age_groups(vaccinations, num_age_groups=3)
+    vaccinations = sum_age_groups(vaccinations, num_age_groups=num_age_groups)
 
-    population = sum_age_groups(population, num_age_groups=3)
+    population = sum_age_groups(population, num_age_groups=num_age_groups)
 
     # convert absolute numbers to share
     U_2 = (U_2.T/population.M.values).T
