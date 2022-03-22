@@ -79,7 +79,7 @@ def create_model_multidmensional(
 
     pr_delay = 10
 
-    pr_median_lambda = 2.0
+    pr_median_lambda = 1.0
 
     with Cov19Model(**params) as this_model:
 
@@ -209,19 +209,23 @@ def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_
     data_begin = cases_df.index[0] - datetime.timedelta(days=6)
     data_end = cases_df.index[-1]
 
+    diff_data_sim = (cases_df.index[0] - infectiability_df.index[0]).days
+    if diff_data_sim < 10+6:
+        raise RuntimeError("Not enough days before the begin of data")
+
     # Params for the model
     params = {
         "new_cases_obs": new_cases_obs,
         "data_begin": data_begin,
         "data_end": data_end,
-        "fcast_len": 14,
-        "diff_data_sim": 14,
+        "fcast_len":0,
+        "diff_data_sim": diff_data_sim,
         "N_population": N_population,
     }
 
     pr_delay = 10
 
-    pr_median_lambda = 1.0
+    pr_median_lambda = 2.0
 
     with Cov19Model(**params) as this_model:
 
@@ -240,13 +244,16 @@ def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_
             pr_median_lambda_0=pr_median_lambda,
             name_lambda_t="base_R_t",
         )
-        R_t_log = R_t_log_base + infectiability_log
-        
+        R_t_log_eff = R_t_log_base + infectiability_log
+
+        pm.Deterministic("eff_R_t", tt.exp(R_t_log_eff))
+
+
         E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
         new_cases = kernelized_spread(
-            lambda_t_log=R_t_log, pr_new_E_begin=E_begin,
+            lambda_t_log=R_t_log_eff, pr_new_E_begin=E_begin,
         )  # has shape (num_days, num_age_groups)
 
         # Transform to weekly cases and add a delay of 6 days
