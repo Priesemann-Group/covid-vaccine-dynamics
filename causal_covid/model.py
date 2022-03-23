@@ -204,13 +204,17 @@ def create_model_single_dimension(cases_df, N_population):
 
         return this_model
 
-def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_population):
-    new_cases_obs = np.array(cases_df)
+
+def create_model_single_dimension_infectiability(
+    cases_df, infectiability_df, N_population
+):
+    new_cases_obs = np.squeeze(np.array(cases_df))
+    assert new_cases_obs.ndim == 1
     data_begin = cases_df.index[0] - datetime.timedelta(days=6)
     data_end = cases_df.index[-1]
 
     diff_data_sim = (cases_df.index[0] - infectiability_df.index[0]).days
-    if diff_data_sim < 10+6:
+    if diff_data_sim < 10 + 6:
         raise RuntimeError("Not enough days before the begin of data")
 
     # Params for the model
@@ -218,7 +222,7 @@ def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_
         "new_cases_obs": new_cases_obs,
         "data_begin": data_begin,
         "data_end": data_end,
-        "fcast_len":0,
+        "fcast_len": 0,
         "diff_data_sim": diff_data_sim,
         "N_population": N_population,
     }
@@ -230,8 +234,11 @@ def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_
     with Cov19Model(**params) as this_model:
 
         # Infectiability
-        infectiability_log = np.log(np.array(infectiability_df))
-        infectiability_log = day_to_week_matrix(this_model.sim_begin, this_model.sim_end, infectiability_df.index, end=True).dot(infectiability_log)
+        infectiability_log = np.log(np.squeeze(np.array(infectiability_df)))
+        assert infectiability_log.ndim == 1
+        infectiability_log = day_to_week_matrix(
+            this_model.sim_begin, this_model.sim_end, infectiability_df.index, end=True
+        ).dot(infectiability_log)
         # Get base reproduction number/spreading rate
         R_t_log_base = lambda_t_with_sigmoids(
             change_points_list=get_cps(
@@ -247,7 +254,6 @@ def create_model_single_dimension_infectiability(cases_df, infectiability_df, N_
         R_t_log_eff = R_t_log_base + infectiability_log
 
         pm.Deterministic("eff_R_t", tt.exp(R_t_log_eff))
-
 
         E_begin = uncorrelated_prior_E(n_data_points_used=2) / 7
 
