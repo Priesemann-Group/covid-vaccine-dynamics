@@ -40,3 +40,8 @@ To infer the base reproduction number that is necessary for the scenario calcula
 afterwards, go into ```./scripts/``` and run ```infer_single_age_group.py -i 1``` (for
 the single dimensional models). Parameters are set inside the script. 
 
+### Filepath setting
+ 
+The case data, population data, waning immunity and vaccination used by the inference
+is centrally set in the ```.\scripts\params.py``` file. 
+
