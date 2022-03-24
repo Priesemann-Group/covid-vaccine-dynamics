@@ -1,4 +1,4 @@
-# Casusal Covid
+# Causal Covid
 
 ## Installation
 
