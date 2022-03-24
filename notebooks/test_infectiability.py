@@ -57,6 +57,9 @@ model = create_model_single_dimension_infectiability(cases_df, infectiability_df
 # model2 = create_model_multidmensional(cases_df, [10**8, 10**8, 10**8])
 trace = pm.sample(model=model, return_inferencedata=True)
 
+vaccination_file = "./../data/2022-02-09_16-39-19_young_to_old_cap/scenario_export/observed_vaccination_data.csv"
+load_infectiability(vaccination_file, population_file, observed_U2_file, observed_U3_file, waning_file, begin_infectiability, end, num_age_groups=1)
+
 
 ## Plotting
 

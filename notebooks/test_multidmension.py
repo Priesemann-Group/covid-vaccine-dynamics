@@ -45,7 +45,6 @@ trace = pm.sample(model=model, return_inferencedata=True, tune=800, draws=300)
 
 import matplotlib.dates as mdates
 
-
 def format_date_axis(ax):
     """
     Formats axis with dates

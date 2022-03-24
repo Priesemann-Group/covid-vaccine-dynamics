@@ -239,6 +239,13 @@ def create_model_single_dimension_infectiability(
         infectiability_log = day_to_week_matrix(
             this_model.sim_begin, this_model.sim_end, infectiability_df.index, end=True
         ).dot(infectiability_log)
+
+        # This assures that the infectiability can be changed in other scenarios
+        # But won't change the inference as the normal distribution is very small
+        infectiability_log = (
+            pm.Normal("infectiability_log_diff", 0, 1, shape=infectiability_log.shape)
+        ) * 1e-6 + infectiability_log
+
         # Get base reproduction number/spreading rate
         R_t_log_base = lambda_t_with_sigmoids(
             change_points_list=get_cps(

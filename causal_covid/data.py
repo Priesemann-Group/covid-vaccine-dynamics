@@ -35,7 +35,17 @@ def sum_age_groups(df, num_age_groups):
         new_age_ranges = ["0-29", "30-59", "60+"]
     elif num_age_groups == 1:
         sum_over = [
-            ("0-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80-89", "90+")
+            (
+                "0-19",
+                "20-29",
+                "30-39",
+                "40-49",
+                "50-59",
+                "60-69",
+                "70-79",
+                "80-89",
+                "90+",
+            )
         ]
         new_age_ranges = ["0+"]
     else:
@@ -61,13 +71,14 @@ def sum_age_groups(df, num_age_groups):
     # df.index = pd.MultiIndex.from_tuples(df.index, names=["date", "Age_group"])
     return df
 
+
 def sum_age_groups_np(array, num_age_groups):
     if num_age_groups == 9:
-        sum_over = [[0,],[1,],[2,],[3,],[4,],[5,],[6,],[7,],[8,]]
+        sum_over = [[0,], [1,], [2,], [3,], [4,], [5,], [6,], [7,], [8,]]
     elif num_age_groups == 3:
-        sum_over = [[0,1],[2,3,4],[5,6,7,8]]
+        sum_over = [[0, 1], [2, 3, 4], [5, 6, 7, 8]]
     elif num_age_groups == 1:
-        sum_over = [[0,1,2,3,4,5,6,7,8]]
+        sum_over = [[0, 1, 2, 3, 4, 5, 6, 7, 8]]
     else:
         raise RuntimeError("Unknown number of age groups")
 
@@ -75,6 +86,7 @@ def sum_age_groups_np(array, num_age_groups):
     for i, ages in enumerate(sum_over):
         new[i] = array[ages].sum(axis=0)
     return new
+
 
 def filter_time(df, begin, end):
     return df[(df.date >= begin) & (df.date <= end)]
@@ -111,15 +123,27 @@ def load_cases(file, begin, end, num_age_groups=3, **kwargs):
     return cases_summed
 
 
-def load_infectiability(vaccination_file, population_file, U2_file, U3_file, waning_file, begin, end, num_age_groups=3, **kwargs):
-    # Returns 4 dataframes (unvaccinated_share, one_dose_share, two, three), each of the same form as the case number dfs 
-    
+def load_infectiability(
+    vaccination_file,
+    population_file,
+    U2_file,
+    U3_file,
+    waning_file,
+    begin,
+    end,
+    num_age_groups=3,
+    **kwargs,
+):
+    # Returns 4 dataframes (unvaccinated_share, one_dose_share, two, three), each of the same form as the case number dfs
+
     population = load_population(
         population_file, transpose=False, num_age_groups=9, **kwargs
     )
 
     vaccinations = pd.read_csv(vaccination_file, **kwargs)
-    vaccinations.rename(columns={"Sunday_date": "date", "Age_group": "age_group"}, inplace=True)
+    vaccinations.rename(
+        columns={"Sunday_date": "date", "Age_group": "age_group"}, inplace=True
+    )
     vaccinations.date = pd.to_datetime(vaccinations.date)
 
     waning_profile = pd.read_csv(waning_file)
@@ -128,65 +152,110 @@ def load_infectiability(vaccination_file, population_file, U2_file, U3_file, wan
     U_2 = np.load(U2_file)
     U_3 = np.load(U3_file)
 
-    # convert U_3 from conditional prob. to absolute numbers 
+    # convert U_3 from conditional prob. to absolute numbers
     for age in range(U_3.shape[0]):
         for i in range(U_3.shape[1]):
-            U_3[age,i,:] *= U_2[age,:,i].sum()
+            U_3[age, i, :] *= U_2[age, :, i].sum()
 
     U_2 = sum_age_groups_np(U_2, num_age_groups)
     U_3 = sum_age_groups_np(U_3, num_age_groups)
 
     for age, size in population.values.tolist():
-        vaccinations.loc[vaccinations.age_group == age,"unvaccinated_share":] *= size
-    
+        vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] *= size
+
     vaccinations = sum_age_groups(vaccinations, num_age_groups=num_age_groups)
 
     population = sum_age_groups(population, num_age_groups=num_age_groups)
 
     # convert absolute numbers to share
-    U_2 = (U_2.T/population.M.values).T
-    U_3 = (U_3.T/population.M.values).T
+    U_2 = (U_2.T / population.M.values).T
+    U_3 = (U_3.T / population.M.values).T
     for age, size in population.values.tolist():
-        vaccinations.loc[vaccinations.age_group == age,"unvaccinated_share":] /= size
-    
-    immune_1 = np.zeros((len(vaccinations.age_group.unique()), len(vaccinations.date.unique())))
+        vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] /= size
+
+    immune_1 = np.zeros(
+        (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
+    )
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
-            for t_dif in range(min(t, len(waning_profile))): # for all potential times between doses
-                immune_1[age, t] += U_2[age, t-t_dif, t:].sum()*waning_profile[t_dif]
+            for t_dif in range(
+                min(t, len(waning_profile))
+            ):  # for all potential times between doses
+                immune_1[age, t] += (
+                    U_2[age, t - t_dif, t:].sum() * waning_profile[t_dif]
+                )
 
-    immune_2 = np.zeros((len(vaccinations.age_group.unique()), len(vaccinations.date.unique())))
+    immune_2 = np.zeros(
+        (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
+    )
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
-            for t_dif in range(min(t, len(waning_profile))): # for all potential times between doses
-                immune_2[age, t] += U_3[age, t-t_dif, t:].sum()*waning_profile[t_dif]
+            for t_dif in range(
+                min(t, len(waning_profile))
+            ):  # for all potential times between doses
+                immune_2[age, t] += (
+                    U_3[age, t - t_dif, t:].sum() * waning_profile[t_dif]
+                )
 
-    immune_3 = np.zeros((len(vaccinations.age_group.unique()), len(vaccinations.date.unique())))
+    immune_3 = np.zeros(
+        (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
+    )
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
-            for t_dif in range(min(t, len(waning_profile))): # for all potential times between doses
-                immune_3[age, t] += U_3[age, :, t-t_dif].sum()*waning_profile[t_dif]
+            for t_dif in range(
+                min(t, len(waning_profile))
+            ):  # for all potential times between doses
+                immune_3[age, t] += U_3[age, :, t - t_dif].sum() * waning_profile[t_dif]
 
-
-
-
-    # filter time interval    
+    # filter time interval
     vaccinations_filtered = filter_time(vaccinations, begin, end)
 
-    immune_1 = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                        data=immune_1[:,np.argmax(vaccinations.date.unique()>=np.datetime64(begin)):np.argmin(vaccinations.date.unique()<=np.datetime64(end))].T,
-                        columns=vaccinations_filtered.age_group.unique())
-    immune_2 = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                        data=immune_2[:,np.argmax(vaccinations.date.unique()>=np.datetime64(begin)):np.argmin(vaccinations.date.unique()<=np.datetime64(end))].T,
-                        columns=vaccinations_filtered.age_group.unique())
-    immune_3 = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                        data=immune_3[:,np.argmax(vaccinations.date.unique()>=np.datetime64(begin)):np.argmin(vaccinations.date.unique()<=np.datetime64(end))].T,
-                        columns=vaccinations_filtered.age_group.unique())
+    immune_1 = pd.DataFrame(
+        index=vaccinations_filtered.date.unique(),
+        data=immune_1[
+            :,
+            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
+                vaccinations.date.unique() <= np.datetime64(end)
+            ),
+        ].T,
+        columns=vaccinations_filtered.age_group.unique(),
+    )
+    immune_2 = pd.DataFrame(
+        index=vaccinations_filtered.date.unique(),
+        data=immune_2[
+            :,
+            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
+                vaccinations.date.unique() <= np.datetime64(end)
+            ),
+        ].T,
+        columns=vaccinations_filtered.age_group.unique(),
+    )
+    immune_3 = pd.DataFrame(
+        index=vaccinations_filtered.date.unique(),
+        data=immune_3[
+            :,
+            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
+                vaccinations.date.unique() <= np.datetime64(end)
+            ),
+        ].T,
+        columns=vaccinations_filtered.age_group.unique(),
+    )
 
     # create vaccination share dfs
-    unvaccinated = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                                data=np.array([np.array(vaccinations_filtered[vaccinations_filtered.age_group == age].loc[:,"unvaccinated_share"]) for age in vaccinations_filtered.age_group.unique()]).T,
-                                columns=vaccinations_filtered.age_group.unique())
+    unvaccinated = pd.DataFrame(
+        index=vaccinations_filtered.date.unique(),
+        data=np.array(
+            [
+                np.array(
+                    vaccinations_filtered[vaccinations_filtered.age_group == age].loc[
+                        :, "unvaccinated_share"
+                    ]
+                )
+                for age in vaccinations_filtered.age_group.unique()
+            ]
+        ).T,
+        columns=vaccinations_filtered.age_group.unique(),
+    )
 
     """
     one_dose = pd.DataFrame(index=vaccinations_filtered.date.unique(),
@@ -202,6 +271,7 @@ def load_infectiability(vaccination_file, population_file, U2_file, U3_file, wan
                                 columns=vaccinations_filtered.age_group.unique())
     """
     return 1 - (immune_1 + immune_2 + immune_3)
+
 
 def load_population(population_file, transpose=True, num_age_groups=3, **kwargs):
     population = pd.read_csv(population_file, **kwargs)
