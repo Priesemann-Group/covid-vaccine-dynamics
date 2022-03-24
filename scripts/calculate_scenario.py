@@ -53,7 +53,7 @@ for i, age_group in enumerate(age_groups):
 
     file_path = os.path.join(
         params.traces_dir,
-        f"run-age_group={age_group}" f"-begin={begin_str}" f"-end={end_str}.pkl",
+        f"run-age_group={age_group}-begin={begin_str}-end={end_str}.pkl",
     )
     with open(file_path, "rb") as f:
         loaded_stuff = pickle.load(f)
