@@ -10,7 +10,6 @@ import os
 
 
 import pymc3 as pm
-import numpy as np
 
 sys.path.append("../covid19_inference")
 sys.path.append("..")

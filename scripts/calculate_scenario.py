@@ -12,7 +12,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import params
-from causal_covid.data import load_cases, load_infectiability
+from causal_covid.data import load_infectiability
 from causal_covid.utils import day_to_week_matrix
 from causal_covid.plotting import plot_R_and_cases
 

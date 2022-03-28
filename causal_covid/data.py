@@ -149,19 +149,22 @@ def load_infectiability(
     waning_profile = pd.read_csv(waning_file)
     waning_profile = waning_profile.vaccine_efficacy
 
-    U_2 = np.load(U2_file)
-    U_3 = np.load(U3_file)
+    if isinstance(U2_file, str):
+        U_2 = np.load(U2_file)
+    else:
+        U_2 = np.array(U2_file)
+    if isinstance(U3_file, str):
+        U_3 = np.load(U3_file)
+    else:
+        U_3 = np.array(U3_file)
 
     # convert U_3 from conditional prob. to absolute numbers
     for age in range(U_3.shape[0]):
-        for i in range(U_3.shape[1]):
+        for i in range(U_3.shape[1]): # i is t_2
             U_3[age, i, :] *= U_2[age, :, i].sum()
 
     U_2 = sum_age_groups_np(U_2, num_age_groups)
     U_3 = sum_age_groups_np(U_3, num_age_groups)
-
-    for age, size in population.values.tolist():
-        vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] *= size
 
     vaccinations = sum_age_groups(vaccinations, num_age_groups=num_age_groups)
 
@@ -170,8 +173,6 @@ def load_infectiability(
     # convert absolute numbers to share
     U_2 = (U_2.T / population.M.values).T
     U_3 = (U_3.T / population.M.values).T
-    for age, size in population.values.tolist():
-        vaccinations.loc[vaccinations.age_group == age, "unvaccinated_share":] /= size
 
     immune_1 = np.zeros(
         (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
@@ -240,36 +241,6 @@ def load_infectiability(
         ].T,
         columns=vaccinations_filtered.age_group.unique(),
     )
-
-    # create vaccination share dfs
-    unvaccinated = pd.DataFrame(
-        index=vaccinations_filtered.date.unique(),
-        data=np.array(
-            [
-                np.array(
-                    vaccinations_filtered[vaccinations_filtered.age_group == age].loc[
-                        :, "unvaccinated_share"
-                    ]
-                )
-                for age in vaccinations_filtered.age_group.unique()
-            ]
-        ).T,
-        columns=vaccinations_filtered.age_group.unique(),
-    )
-
-    """
-    one_dose = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                                data=np.array([np.array(vaccinations_filtered[vaccinations_filtered.age_group == age].loc[:,"1st_dose_share"]) for age in vaccinations_filtered.age_group.unique()]).T,
-                                columns=vaccinations_filtered.age_group.unique())
-
-    two_doses = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                                data=np.array([np.array(vaccinations_filtered[vaccinations_filtered.age_group == age].loc[:,"2nd_dose_share"]) for age in vaccinations_filtered.age_group.unique()]).T,
-                                columns=vaccinations_filtered.age_group.unique())
-
-    three_doses = pd.DataFrame(index=vaccinations_filtered.date.unique(),
-                                data=np.array([np.array(vaccinations_filtered[vaccinations_filtered.age_group == age].loc[:,"3rd_dose_share"]) for age in vaccinations_filtered.age_group.unique()]).T,
-                                columns=vaccinations_filtered.age_group.unique())
-    """
     return 1 - (immune_1 + immune_2 + immune_3)
 
 
