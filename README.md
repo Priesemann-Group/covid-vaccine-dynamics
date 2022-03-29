@@ -6,6 +6,13 @@ Clone with
 ```bash
 git clone --recurse-submodules git@github.com:Priesemann-Group/causal_covid.git
 ```
+
+or install as package:
+
+```bash
+pip install git:ssh://git@github.com/Priesemann-Group/causal_covid.git
+```
+
 ### Notes:
 You need `python>3.8`.
 
