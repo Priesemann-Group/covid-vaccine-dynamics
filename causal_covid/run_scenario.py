@@ -7,7 +7,7 @@ import pymc3 as pm
 import pandas as pd
 
 
-import params
+from causal_covid import params
 from causal_covid.data import load_infectiability
 from causal_covid.utils import day_to_week_matrix
 from causal_covid.plotting import plot_R_and_cases
