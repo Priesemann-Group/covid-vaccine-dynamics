@@ -7,12 +7,6 @@ Clone with
 git clone --recurse-submodules git@github.com:Priesemann-Group/causal_covid.git
 ```
 
-or install as package:
-
-```bash
-pip install git:ssh://git@github.com/Priesemann-Group/causal_covid.git
-```
-
 ### Notes:
 You need `python>3.8`.
 
@@ -31,6 +25,21 @@ Before you can use the code and rerun the analyses you have to:
 	```bash
 	pip install -r requirments.txt
 	```
+
+## Installation as package
+
+Install
+
+```bash
+pip install git:ssh://git@github.com/Priesemann-Group/causal_covid.git
+```
+
+To run a scenario, open a interactive window and run:
+```python
+from causal_covid import run_scenario
+run_scenario.single_dimensional("data/2022-02-09_16-39-19_young_to_old_cap/vaccination_policy/U_2.npy", "data/2022-02-09_16-39-19_young_to_old_cap/vaccination_policy/u_3.npy")
+```
+
 ## Getting started
 
 ### Scenario calculation
