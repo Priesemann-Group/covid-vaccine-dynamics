@@ -1,3 +1,0 @@
-[submodule "covid19_inference"]
-	path = covid19_inference
-	url = git@github.com:Priesemann-Group/covid19_inference.git

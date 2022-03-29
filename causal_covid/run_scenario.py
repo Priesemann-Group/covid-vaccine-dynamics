@@ -2,9 +2,6 @@ import pickle
 import os
 import sys
 
-sys.path.append("../covid19_inference")
-sys.path.append("..")
-
 import numpy as np
 import pymc3 as pm
 import pandas as pd
@@ -16,13 +13,14 @@ from causal_covid.utils import day_to_week_matrix
 from causal_covid.plotting import plot_R_and_cases
 
 
+
 def single_dimensional(
     U2,
     u3,
     begin_str="2021-07-01",
     end_str="2021-12-01",
     plotting=False,
-    save_dir="../data/results_scenarios/",
+    save_dir=None,
     save_name="scenario",
 ):
     age_groups = [
@@ -36,6 +34,9 @@ def single_dimensional(
         "80-89",
         "90+",
     ]
+
+    if save_dir is None:
+        save_dir=os.path.join(os.path.dirname(__file__), "../data/results_scenarios/")
 
     weekly_cases_list = []
 

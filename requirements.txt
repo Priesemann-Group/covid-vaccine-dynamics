@@ -11,3 +11,4 @@ cairosvg
 filelock>=3.2.0
 tabulate
 statsmodels
+git+https://github.com/Priesemann-Group/covid19_inference@v0.3.6
