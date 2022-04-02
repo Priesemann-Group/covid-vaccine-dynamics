@@ -1,6 +1,7 @@
 import pickle
 import os
 import sys
+import datetime
 
 import numpy as np
 import pymc3 as pm
@@ -76,12 +77,23 @@ def single_dimensional(
         infectability_scenario = np.log(
             np.squeeze(np.array(infectiability_scenario_df))
         )
+        infectability_diff_log = infectability_scenario - infectability_original
+
+        # prepend 2 weeks
+        infectability_diff_log = np.concatenate(
+            [[infectability_diff_log[0]] * 2, infectability_diff_log]
+        )
+        weeks = [
+            model.data_begin - datetime.timedelta(days=14),
+            model.data_begin - datetime.timedelta(days=7),
+        ] + list(infectiability_df.index)
+
         trace_for_scenario = trace.copy()
         # This requires some calculations, as the infectability was originally
         # modelled as a distribution with a very small standard deviation
         infectiability_diff_new = day_to_week_matrix(
-            model.sim_begin, model.sim_end, infectiability_df.index, end=True
-        ).dot((infectability_scenario - infectability_original) * 1e6)
+            model.sim_begin, model.sim_end, weeks
+        ).dot(infectability_diff_log* 1e6)
         shape_to_have = trace_for_scenario.posterior["infectiability_log_diff"].shape
         trace_for_scenario.posterior["infectiability_log_diff"].values = (
             np.ones(shape_to_have) * infectiability_diff_new

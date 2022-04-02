@@ -16,7 +16,6 @@ from multiprocessing import cpu_count
 sys.path.append("../covid19_inference")
 sys.path.append("..")
 
-import data
 from .utils import get_cps, day_to_week_matrix, day_to_week_transform
 from covid19_inference import Cov19Model
 from covid19_inference.model import (
@@ -33,9 +32,7 @@ from covid19_inference.model import (
 import covid19_inference
 
 
-def create_model_multidmensional(
-    cases_df, N_population,
-):
+def create_model_multidmensional(cases_df, N_population):
     """
     Creates the variant model with different compartments
 
@@ -64,15 +61,16 @@ def create_model_multidmensional(
     new_cases_obs = np.array(cases_df)
     num_age_groups = new_cases_obs.shape[1]
 
-    data_begin = cases_df.index[0] - datetime.timedelta(days=6)
-    data_end = cases_df.index[-1]
+    assert new_cases_obs.ndim == 2
+    data_begin = cases_df.index[0]
+    data_end = cases_df.index[-1] + datetime.timedelta(days=6)
 
     # Params for the model
     params = {
         "new_cases_obs": new_cases_obs,
         "data_begin": data_begin,
         "data_end": data_end,
-        "fcast_len": 14,
+        "fcast_len": 0,
         "diff_data_sim": 14,
         "N_population": N_population,
     }
@@ -114,7 +112,7 @@ def create_model_multidmensional(
             arr_begin=this_model.sim_begin,
             arr_end=this_model.sim_end,
             weeks=cases_df.index,
-            end=True,
+            end=False,
             additional_delay=6,
         )
 
@@ -136,10 +134,11 @@ def create_model_multidmensional(
         return this_model
 
 
-def create_model_single_dimension(cases_df, N_population):
-    new_cases_obs = np.array(cases_df)
-    data_begin = cases_df.index[0] - datetime.timedelta(days=6)
-    data_end = cases_df.index[-1]
+def create_model_single_dimension(cases_df, N_population, diff_data_sim=14):
+    new_cases_obs = np.squeeze(np.array(cases_df))
+    assert new_cases_obs.ndim == 1
+    data_begin = cases_df.index[0]
+    data_end = cases_df.index[-1] + datetime.timedelta(days=6)
 
     # Params for the model
     params = {
@@ -183,7 +182,7 @@ def create_model_single_dimension(cases_df, N_population):
             arr_begin=this_model.sim_begin,
             arr_end=this_model.sim_end,
             weeks=cases_df.index,
-            end=True,
+            end=False,
             additional_delay=6,
         )
 
@@ -210,12 +209,8 @@ def create_model_single_dimension_infectiability(
 ):
     new_cases_obs = np.squeeze(np.array(cases_df))
     assert new_cases_obs.ndim == 1
-    data_begin = cases_df.index[0] - datetime.timedelta(days=6)
-    data_end = cases_df.index[-1]
-
-    diff_data_sim = (cases_df.index[0] - infectiability_df.index[0]).days
-    if diff_data_sim < 10 + 6:
-        raise RuntimeError("Not enough days before the begin of data")
+    data_begin = cases_df.index[0]
+    data_end = cases_df.index[-1] + datetime.timedelta(days=6)
 
     # Params for the model
     params = {
@@ -223,21 +218,31 @@ def create_model_single_dimension_infectiability(
         "data_begin": data_begin,
         "data_end": data_end,
         "fcast_len": 0,
-        "diff_data_sim": diff_data_sim,
+        "diff_data_sim": 14,
         "N_population": N_population,
     }
 
     pr_delay = 10
 
-    pr_median_lambda = 2.0
+    pr_median_lambda = 1.0
 
     with Cov19Model(**params) as this_model:
 
         # Infectiability
         infectiability_log = np.log(np.squeeze(np.array(infectiability_df)))
         assert infectiability_log.ndim == 1
+
+        # prepend 2 weeks
+        infectiability_log = np.concatenate(
+            [[infectiability_log[0]] * 2, infectiability_log]
+        )
+        weeks = [
+            data_begin - datetime.timedelta(days=14),
+            data_begin - datetime.timedelta(days=7),
+        ] + list(infectiability_df.index)
+
         infectiability_log = day_to_week_matrix(
-            this_model.sim_begin, this_model.sim_end, infectiability_df.index, end=True
+            this_model.sim_begin, this_model.sim_end, weeks
         ).dot(infectiability_log)
 
         # This assures that the infectiability can be changed in other scenarios
@@ -275,7 +280,7 @@ def create_model_single_dimension_infectiability(
             arr_begin=this_model.sim_begin,
             arr_end=this_model.sim_end,
             weeks=cases_df.index,
-            end=True,
+            end=False,
             additional_delay=6,
         )
 

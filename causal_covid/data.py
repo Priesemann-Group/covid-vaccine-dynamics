@@ -160,7 +160,7 @@ def load_infectiability(
 
     # convert U_3 from conditional prob. to absolute numbers
     for age in range(U_3.shape[0]):
-        for i in range(U_3.shape[1]): # i is t_2
+        for i in range(U_3.shape[1]):  # i is t_2
             U_3[age, i, :] *= U_2[age, :, i].sum()
 
     U_2 = sum_age_groups_np(U_2, num_age_groups)
@@ -211,34 +211,23 @@ def load_infectiability(
     # filter time interval
     vaccinations_filtered = filter_time(vaccinations, begin, end)
 
+    beg_index = np.argwhere(vaccinations.date.unique() >= np.datetime64(begin))[0, 0]
+    end_index = np.argwhere(vaccinations.date.unique() <= np.datetime64(end))[-1, 0] + 1
+    # plus 1 because of last index inclusive
+
     immune_1 = pd.DataFrame(
         index=vaccinations_filtered.date.unique(),
-        data=immune_1[
-            :,
-            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
-                vaccinations.date.unique() <= np.datetime64(end)
-            ),
-        ].T,
+        data=immune_1[:, beg_index:end_index].T,
         columns=vaccinations_filtered.age_group.unique(),
     )
     immune_2 = pd.DataFrame(
         index=vaccinations_filtered.date.unique(),
-        data=immune_2[
-            :,
-            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
-                vaccinations.date.unique() <= np.datetime64(end)
-            ),
-        ].T,
+        data=immune_2[:, beg_index:end_index].T,
         columns=vaccinations_filtered.age_group.unique(),
     )
     immune_3 = pd.DataFrame(
         index=vaccinations_filtered.date.unique(),
-        data=immune_3[
-            :,
-            np.argmax(vaccinations.date.unique() >= np.datetime64(begin)) : np.argmin(
-                vaccinations.date.unique() <= np.datetime64(end)
-            ),
-        ].T,
+        data=immune_3[:, beg_index:end_index].T,
         columns=vaccinations_filtered.age_group.unique(),
     )
     return 1 - (immune_1 + immune_2 + immune_3)
@@ -259,3 +248,6 @@ def load_population(population_file, transpose=True, num_age_groups=3, **kwargs)
             columns=population.age_group,
         )
     return population
+
+
+

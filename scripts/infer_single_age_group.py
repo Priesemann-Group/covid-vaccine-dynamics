@@ -14,9 +14,9 @@ import pymc3 as pm
 sys.path.append("../covid19_inference")
 sys.path.append("..")
 
-from causal_covid.data import load_cases, load_infectiability
+from causal_covid.data import load_cases, load_infectiability, load_population
 from causal_covid.model import create_model_single_dimension_infectiability
-import params
+from causal_covid import params
 
 
 def str2datetime(string):
@@ -70,10 +70,8 @@ if __name__ == "__main__":
     cases_df = load_cases(params.cases_file, begin, end, num_age_groups=9)
     cases_df = cases_df[args.age_group]
 
-    diff_data_sim = (
-        14 + 7
-    )  # plus 7 days because data begin 6 days earlier as the reported index at the end of the week
-    begin_infectiability = begin - datetime.timedelta(days=diff_data_sim)
+    diff_data_sim = 14
+    begin_infectiability = begin
 
     infectiability_df = load_infectiability(
         params.vaccination_file,
@@ -87,11 +85,14 @@ if __name__ == "__main__":
     )
     infectiability_df = infectiability_df[args.age_group]
 
+    population = load_population(params.population_file, num_age_groups=9)
+    population = float(population[args.age_group])
+
     model = create_model_single_dimension_infectiability(
-        cases_df, infectiability_df, N_population=1e8
+        cases_df, infectiability_df, N_population=population
     )
     trace = pm.sample(
-        model=model, draws=1000, tune=1000, return_inferencedata=True, cores=2, chains=2
+        model=model, draws=500, tune=500, return_inferencedata=True, cores=2, chains=2
     )
 
     input_args_dict = dict(**args.__dict__)

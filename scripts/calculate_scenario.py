@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import params
+from causal_covid import params
 from causal_covid.data import load_infectiability
 from causal_covid.utils import day_to_week_matrix
 from causal_covid.plotting import plot_R_and_cases
@@ -81,7 +81,7 @@ for i, age_group in enumerate(age_groups):
     # This requires some calculations, as the infectability was originally
     # modelled as a distribution with a very small standard deviation
     infectiability_diff_new = day_to_week_matrix(
-        model.sim_begin, model.sim_end, infectiability_df.index, end=True
+        model.sim_begin, model.sim_end, infectiability_df.index, end=False
     ).dot((infectability_scenario - infectability_original) * 1e6)
     shape_to_have = trace_for_scenario.posterior["infectiability_log_diff"].shape
     trace_for_scenario.posterior["infectiability_log_diff"].values = (

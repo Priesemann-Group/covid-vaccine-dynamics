@@ -24,9 +24,12 @@ args.id = args.id - 1
 log.info(f"ID: {args.id}")
 
 
-num_jobs_per_node = 9
+num_jobs_per_node = 18
 
-begin_end = [("2021-07-01", "2021-12-01")]
+#begin_end = [("2021-07-01", "2021-12-01")]
+#begin_end = [("2020-12-20", "2021-12-19"), ("2020-12-20", "2021-07-01")]
+begin_end = [(("2020-12-20", "2021-05-01"))]
+
 age_groups = [
     "0-19",
     "20-29",
