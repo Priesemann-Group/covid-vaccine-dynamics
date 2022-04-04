@@ -161,11 +161,12 @@ def load_infectiability(
     # convert U_3 from conditional prob. to absolute numbers by multiplying by the
     # number of second doses
     for age in range(U_3.shape[0]):
-        for i in range(U_3.shape[1]-1):  # i is t_2, exclude last column as this is the
+        for i in range(
+            U_3.shape[1] - 1
+        ):  # i is t_2, exclude last column as this is the
             # ones that only got their first dose not second doses
-            U_3[age, i, :] *= U_2[age, :-1, i].sum() # exclude last row of U_2 as it
-            # this are the ones which only got the first vaccination and not the 2nd. 
-
+            U_3[age, i, :] *= U_2[age, :-1, i].sum()  # exclude last row of U_2 as it
+            # this are the ones which only got the first vaccination and not the 2nd.
 
     U_2 = sum_age_groups_np(U_2, num_age_groups)
     U_3 = sum_age_groups_np(U_3, num_age_groups)
@@ -184,13 +185,13 @@ def load_infectiability(
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
             for t_dif in range(
-                min(t+1, len(waning_profile)+1)
+                min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
 
                 immune_1[age, t] += (
-                    U_2[age, t - t_dif, t+1:].sum() * waning_profile[t_dif]
-                ) # Sum all vaccinations with first dose at  t - t_dif and 2nd dose later
-                  # than the current time
+                    U_2[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]
+                )  # Sum all vaccinations with first dose at  t - t_dif and 2nd dose later
+                # than the current time
 
     immune_2 = np.zeros(
         (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
@@ -198,12 +199,12 @@ def load_infectiability(
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
             for t_dif in range(
-                min(t+1, len(waning_profile)+1)
+                min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_2[age, t] += (
-                    U_3[age, t - t_dif, t+1:].sum() * waning_profile[t_dif]
-                ) # Sum all vaccinations with second dose at  t - t_dif and 3rd dose later
-                  # than the current time
+                    U_3[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]
+                )  # Sum all vaccinations with second dose at  t - t_dif and 3rd dose later
+                # than the current time
 
     immune_3 = np.zeros(
         (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
@@ -211,9 +212,11 @@ def load_infectiability(
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
             for t_dif in range(
-                min(t+1, len(waning_profile)+1)
+                min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
-                immune_3[age, t] += U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif]
+                immune_3[age, t] += (
+                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif]
+                )
                 # Sum all vaccinations with 3rd dose at  t - t_dif and 2nd dose at some
                 # non-relevant time.
 
@@ -257,6 +260,3 @@ def load_population(population_file, transpose=True, num_age_groups=3, **kwargs)
             columns=population.age_group,
         )
     return population
-
-
-
