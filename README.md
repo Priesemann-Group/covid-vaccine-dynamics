@@ -4,7 +4,7 @@
 
 Clone with 
 ```bash
-git clone --recurse-submodules git@github.com:Priesemann-Group/causal_covid.git
+git clone git@github.com:Priesemann-Group/causal_covid.git
 ```
 
 ### Notes:
@@ -31,7 +31,7 @@ Before you can use the code and rerun the analyses you have to:
 Install
 
 ```bash
-pip install git:ssh://git@github.com/Priesemann-Group/causal_covid.git
+pip install git+ssh://git@github.com/Priesemann-Group/causal_covid.git
 ```
 
 To run a scenario, open a interactive window and run:
