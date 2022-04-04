@@ -24,11 +24,11 @@ args.id = args.id - 1
 log.info(f"ID: {args.id}")
 
 
-num_jobs_per_node = 18
+num_jobs_per_node = 4
 
 #begin_end = [("2021-07-01", "2021-12-01")]
-#begin_end = [("2020-12-20", "2021-12-19"), ("2020-12-20", "2021-07-01")]
-begin_end = [(("2020-12-20", "2021-05-01"))]
+begin_end = [("2020-12-20", "2021-12-19"), ("2020-12-20", "2021-07-01")]
+#begin_end = [(("2020-12-20", "2021-05-01"))]
 
 age_groups = [
     "0-19",
@@ -42,15 +42,18 @@ age_groups = [
     "90+",
 ]
 
+draws = [100, 500]
 
 mapping = []
 
 for be in begin_end:
     for a in age_groups:
-        ma = []
-        ma.append(be)
-        ma.append(a)
-        mapping.append(tuple(ma))
+        for d in draws:
+            ma = []
+            ma.append(be)
+            ma.append(a)
+            ma.append(d)
+            mapping.append(tuple(ma))
 
 
 mapping_clustered = []
@@ -73,14 +76,19 @@ def exec(args_list):
     """
     Executes python script
     """
-    (begin_end, age_group,) = args_list
+    (begin_end, age_group, draws) = args_list
     os.system(
         f"python infer_single_age_group.py "
         f"-b {begin_end[0]} -e {begin_end[1]} "
         f"-a {age_group} "
+        f"-d {draws} "
     )
 
 
 if __name__ == "__main__":
     with Pool(num_jobs_per_node) as p:
         p.map(exec, mapping_clustered[args.id])
+
+
+
+

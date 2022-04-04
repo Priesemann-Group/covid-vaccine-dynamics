@@ -49,14 +49,14 @@ def plot_R_and_cases(fig, outer_gs, cases_df, dict_variable):
         axes.append(ax)
 
     t = [
-        cases_df.index[-1] - datetime.timedelta(days=i)
-        for i in range(len(cases_df) * 7, -1, -1)
+        cases_df.index[0] + datetime.timedelta(days=i)
+        for i in range(len(cases_df) * 7)
     ]
 
-    base_R_t = np.array(dict_variable["base_R_t"][..., 20 : len(t) + 20]).reshape(
+    base_R_t = np.array(dict_variable["base_R_t"][..., 14 : len(t) + 14]).reshape(
         (-1, len(t))
     )
-    eff_R_t = np.array(dict_variable["eff_R_t"][..., 20 : len(t) + 20]).reshape(
+    eff_R_t = np.array(dict_variable["eff_R_t"][..., 14 : len(t) + 14]).reshape(
         (-1, len(t))
     )
     weekly_cases = np.array(dict_variable["weekly_cases"]).reshape(

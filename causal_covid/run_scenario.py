@@ -18,11 +18,12 @@ from causal_covid.plotting import plot_R_and_cases
 def single_dimensional(
     U2,
     u3,
-    begin_str="2021-07-01",
-    end_str="2021-12-01",
+    begin_str="2020-12-20",
+    end_str="2021-12-19",
     plotting=False,
     save_dir=None,
     save_name="scenario",
+    draws=500,
 ):
     age_groups = [
         "0-19",
@@ -31,8 +32,8 @@ def single_dimensional(
         "40-49",
         "50-59",
         "60-69",
-        "70-79",
-        "80-89",
+   #     "70-79",
+   #     "80-89",
         "90+",
     ]
 
@@ -52,7 +53,7 @@ def single_dimensional(
         # Load trace and model of the age-group:
         file_path = os.path.join(
             params.traces_dir,
-            f"run-age_group={age_group}-begin={begin_str}-end={end_str}.pkl",
+            f"run-age_group={age_group}-begin={begin_str}-end={end_str}-draws={draws}.pkl",
         )
         with open(file_path, "rb") as f:
             loaded_stuff = pickle.load(f)

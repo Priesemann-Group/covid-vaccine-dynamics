@@ -17,6 +17,7 @@ sys.path.append("..")
 from causal_covid.data import load_cases, load_infectiability, load_population
 from causal_covid.model import create_model_single_dimension_infectiability
 from causal_covid import params
+import covid19_inference as cov19
 
 
 def str2datetime(string):
@@ -58,6 +59,14 @@ parser.add_argument(
     default="",
 )
 
+parser.add_argument(
+    "-d",
+    "--draws",
+    type=int,
+    help="Number of draws",
+    default="",
+)
+
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -91,8 +100,24 @@ if __name__ == "__main__":
     model = create_model_single_dimension_infectiability(
         cases_df, infectiability_df, N_population=population
     )
-    trace = pm.sample(
-        model=model, draws=500, tune=500, return_inferencedata=True, cores=2, chains=2
+    #trace = pm.sample(
+    #    model=model, draws=500, tune=500, return_inferencedata=True, cores=2, chains=2
+    #)
+
+    draws = tune = args.draws
+
+    multitrace, trace = cov19.robust_sample(
+        model,
+        tune=tune,
+        draws=draws,
+        burnin_draws=draws // 6,
+        burnin_draws_2nd=draws // 3,
+        burnin_chains=16,
+        burnin_chains_2nd=8,
+        final_chains=2,
+        sample_kwargs={"cores": 11},
+        max_treedepth=10,
+        target_accept=0.8,
     )
 
     input_args_dict = dict(**args.__dict__)
