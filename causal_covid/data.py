@@ -166,7 +166,7 @@ def load_infectiability(
         ):  # i is t_2, exclude last column as this is the
             # ones that only got their first dose not second doses
             U_3[age, i, :] *= U_2[age, :-1, i].sum()  # exclude last row of U_2 as it
-            # this are the ones which only got the first vaccination and not the 2nd.
+            # it includes the completely non-vaccinated in [:,-1, -1]
 
     U_2 = sum_age_groups_np(U_2, num_age_groups)
     U_3 = sum_age_groups_np(U_3, num_age_groups)
