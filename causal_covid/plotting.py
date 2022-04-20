@@ -33,7 +33,7 @@ def format_date_axis(ax):
     """
     Formats axis with dates
     """
-    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4, byweekday=mdates.SU))
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=8, byweekday=mdates.SU))
     ax.xaxis.set_minor_locator(mdates.WeekdayLocator(interval=1, byweekday=mdates.SU))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
 
@@ -113,6 +113,91 @@ def plot_R_and_cases(fig, outer_gs, cases_df, dict_variable):
         color="tab:blue"
     )
     ax.plot(cases_df.index, np.array(cases_df), "d", color="k", label="data")
+    ax.set_xlabel("2021")
+    ax.set_ylabel("Weekly cases")
+    ax.set_xlim(min(t), max(t))
+    ax.set_ylim(0)
+    format_date_axis(ax)
+    ax.legend()
+
+    return axes
+
+
+def plot_R_and_cases_multidim(i_age, fig, outer_gs, cases_df, dict_variable, population):
+
+    inner = mpl.gridspec.GridSpecFromSubplotSpec(
+        2, 1, subplot_spec=outer_gs, hspace=0.2, height_ratios=(0.6, 1)
+    )
+    axes = []
+    for j in range(2):
+        ax = fig.add_subplot(inner[j])
+        axes.append(ax)
+
+    t = [
+        cases_df.index[0] + datetime.timedelta(days=i)
+        for i in range(len(cases_df) * 7)
+    ]
+
+    base_R_t = np.array(dict_variable["base_R_t"][..., 14 : len(t) + 14, i_age]).reshape(
+        (-1, len(t))
+    )
+    eff_R_t = np.array(dict_variable["eff_R_t"][..., 14 : len(t) + 14, i_age]).reshape(
+        (-1, len(t))
+    )
+    weekly_cases = np.array(dict_variable["weekly_cases"])[..., i_age].reshape(
+        (-1, len(cases_df.index))
+    )
+
+    ax = axes[0]
+    ax.axhline(1, ls="--", color="gray", alpha=0.5)
+    ax.fill_between(
+        t,
+        *np.percentile(base_R_t, axis=(0,), q=(12.5, 87.5)),
+        alpha=0.3,
+        color="tab:blue",
+        label="base $R_t$ (75% & 95% CI)"
+    )
+    ax.fill_between(
+        t,
+        *np.percentile(base_R_t, axis=(0,), q=(2.5, 97.5)),
+        alpha=0.3,
+        color="tab:blue"
+    )
+    ax.fill_between(
+        t,
+        *np.percentile(eff_R_t, axis=(0,), q=(12.5, 87.5)),
+        alpha=0.3,
+        color="tab:orange",
+        label="eff. $R_t$ (75% & 95% CI)"
+    )
+    ax.fill_between(
+        t,
+        *np.percentile(eff_R_t, axis=(0,), q=(2.5, 97.5)),
+        alpha=0.3,
+        color="tab:orange"
+    )
+
+    ax.set_xlim(min(t), max(t))
+    ax.set_ylabel("$R_t$")
+    ax.legend()
+    format_date_axis(ax)
+    ax.xaxis.set_ticklabels([])
+
+    ax = axes[1]
+    ax.fill_between(
+        cases_df.index,
+        *np.percentile(weekly_cases/population[i_age]*1e6, axis=(0,), q=(12.5, 87.5)),
+        alpha=0.3,
+        color="tab:blue",
+        label="model (75% & 95% CI)"
+    )
+    plt.fill_between(
+        cases_df.index,
+        *np.percentile(weekly_cases/population[i_age]*1e6, axis=(0,), q=(2.5, 97.5)),
+        alpha=0.3,
+        color="tab:blue"
+    )
+    ax.plot(cases_df.index, np.array(cases_df)[...,i_age]/population[i_age]*1e6, "d", color="k", label="data")
     ax.set_xlabel("2021")
     ax.set_ylabel("Weekly cases")
     ax.set_xlim(min(t), max(t))

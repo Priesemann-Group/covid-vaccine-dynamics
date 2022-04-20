@@ -14,7 +14,7 @@ from multiprocessing import cpu_count
 import matplotlib.pyplot as plt
 
 
-sys.path.append("../covid19_inference")
+
 sys.path.append("..")
 
 import data
@@ -22,7 +22,7 @@ from causal_covid.data import load_cases
 from causal_covid.utils import get_cps, day_to_week_matrix
 from causal_covid.model import (
     create_model_single_dimension,
-    create_model_multidmensional,
+    create_model_multidimensional,
 )
 
 from covid19_inference import Cov19Model
@@ -43,7 +43,7 @@ cases_df = load_cases(file, begin, end)
 cases_df = cases_df.sum(axis=1)
 
 model = create_model_single_dimension(cases_df, N_population=10 ** 7)
-# model2 = create_model_multidmensional(cases_df, [10**8, 10**8, 10**8])
+# model2 = create_model_multidimensional(cases_df, [10**8, 10**8, 10**8])
 trace = pm.sample(model=model, return_inferencedata=True)
 
 

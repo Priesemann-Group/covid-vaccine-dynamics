@@ -9,13 +9,13 @@ import argparse
 import os
 
 
-import pymc3 as pm
+import numpy as np
 
 
 sys.path.append("..")
 
 from causal_covid.data import load_cases, load_infectiability, load_population
-from causal_covid.model import create_model_single_dimension_infectiability
+from causal_covid.model import create_model_multidimensional
 from causal_covid import params
 import covid19_inference as cov19
 
@@ -38,10 +38,6 @@ def dict_2_string(dictionary):
 
 
 parser = argparse.ArgumentParser(description="Run model")
-
-parser.add_argument(
-    "-a", "--age_group", type=str, help="Age-group to use", default="",
-)
 
 parser.add_argument(
     "-b",
@@ -77,7 +73,7 @@ if __name__ == "__main__":
     end = str2datetime(args.end)
 
     cases_df = load_cases(params.cases_file, begin, end, num_age_groups=9)
-    cases_df = cases_df[args.age_group]
+    cases_df = cases_df
 
     diff_data_sim = 14
     begin_infectiability = begin
@@ -92,17 +88,14 @@ if __name__ == "__main__":
         end,
         num_age_groups=9,
     )
-    infectiability_df = infectiability_df[args.age_group]
+    infectiability_df = infectiability_df
 
-    population = load_population(params.population_file, num_age_groups=9)
-    population = float(population[args.age_group])
+    population_df = load_population(params.population_file, num_age_groups=9)
+    population = np.squeeze(np.array(population_df))
 
-    model = create_model_single_dimension_infectiability(
+    model = create_model_multidimensional(
         cases_df, infectiability_df, N_population=population
     )
-    #trace = pm.sample(
-    #    model=model, draws=500, tune=500, return_inferencedata=True, cores=2, chains=2
-    #)
 
     draws = tune = args.draws
 
@@ -115,9 +108,9 @@ if __name__ == "__main__":
         burnin_chains=16,
         burnin_chains_2nd=8,
         final_chains=2,
-        sample_kwargs={"cores": 11},
+        sample_kwargs={"cores": 16},
         max_treedepth=10,
-        target_accept=0.8,
+        target_accept=0.85,
     )
 
     input_args_dict = dict(**args.__dict__)

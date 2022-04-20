@@ -14,7 +14,7 @@ from multiprocessing import cpu_count
 import matplotlib.pyplot as plt
 
 
-sys.path.append("../covid19_inference")
+
 sys.path.append("..")
 
 import data
@@ -22,7 +22,7 @@ from causal_covid.data import load_cases, load_infectiability
 from causal_covid.utils import get_cps, day_to_week_matrix
 from causal_covid.model import (
     create_model_single_dimension,
-    create_model_multidmensional,
+    create_model_multidimensional,
     create_model_single_dimension_infectiability,
 )
 
@@ -54,7 +54,7 @@ begin_infectiability = begin - datetime.timedelta(days=diff_data_sim)
 infectiability_df = load_infectiability(vaccination_file, population_file, observed_U2_file, observed_U3_file, waning_file, begin_infectiability, end, num_age_groups=1)
 
 model = create_model_single_dimension_infectiability(cases_df, infectiability_df, N_population=10 ** 7)
-# model2 = create_model_multidmensional(cases_df, [10**8, 10**8, 10**8])
+# model2 = create_model_multidimensional(cases_df, [10**8, 10**8, 10**8])
 trace = pm.sample(model=model, return_inferencedata=True)
 
 vaccination_file = "./../data/2022-02-09_16-39-19_young_to_old_cap/scenario_export/observed_vaccination_data.csv"

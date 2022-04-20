@@ -2,7 +2,7 @@ import pickle
 import os
 import sys
 
-sys.path.append("../covid19_inference")
+
 sys.path.append("..")
 
 import numpy as np
@@ -59,7 +59,7 @@ for i, age_group in enumerate(age_groups):
         loaded_stuff = pickle.load(f)
     cases_df, infectiability_df, model, trace = loaded_stuff
 
-    # Load the vaccination file of the scenario and calculat the changed infectability:
+    # Load the vaccination file of the scenario and calculat the changed infectiability:
 
     infectiability_scenario_df = load_infectiability(
         params.vaccination_file,
@@ -75,14 +75,14 @@ for i, age_group in enumerate(age_groups):
 
     # Change the infactability in the loaded trace to afterwards the calculate the new dynamics:
 
-    infectability_original = np.log(np.squeeze(np.array(infectiability_df)))
-    infectability_scenario = np.log(np.squeeze(np.array(infectiability_scenario_df)))
+    infectiability_original = np.log(np.squeeze(np.array(infectiability_df)))
+    infectiability_scenario = np.log(np.squeeze(np.array(infectiability_scenario_df)))
     trace_for_scenario = trace.copy()
-    # This requires some calculations, as the infectability was originally
+    # This requires some calculations, as the infectiability was originally
     # modelled as a distribution with a very small standard deviation
     infectiability_diff_new = day_to_week_matrix(
         model.sim_begin, model.sim_end, infectiability_df.index, end=False
-    ).dot((infectability_scenario - infectability_original) * 1e6)
+    ).dot((infectiability_scenario - infectiability_original) * 1e6)
     shape_to_have = trace_for_scenario.posterior["infectiability_log_diff"].shape
     trace_for_scenario.posterior["infectiability_log_diff"].values = (
         np.ones(shape_to_have) * infectiability_diff_new
