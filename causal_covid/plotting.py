@@ -199,7 +199,7 @@ def plot_R_and_cases_multidim(i_age, fig, outer_gs, cases_df, dict_variable, pop
     )
     ax.plot(cases_df.index, np.array(cases_df)[...,i_age]/population[i_age]*1e6, "d", color="k", label="data")
     ax.set_xlabel("2021")
-    ax.set_ylabel("Weekly cases")
+    ax.set_ylabel("Weekly incidence")
     ax.set_xlim(min(t), max(t))
     ax.set_ylim(0)
     format_date_axis(ax)

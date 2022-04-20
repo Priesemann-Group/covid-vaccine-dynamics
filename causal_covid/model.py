@@ -32,7 +32,7 @@ from covid19_inference.model import (
 import covid19_inference
 
 
-def create_model_multidimensional(cases_df, infectiability_df, N_population):
+def create_model_multidimensional(cases_df, infectiability_df, N_population, C_mat_param):
     """
     Creates the variant model with different compartments
 
@@ -136,8 +136,10 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population):
 
         #C = np.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
         #C = np.array([[1.0, 0.1, 0.1], [0.1, 1, 0.1], [0.1, 0.1, 1]])
-        C = np.ones((num_age_groups, num_age_groups))*0.05
-        C[np.arange(num_age_groups), np.arange(num_age_groups)]  = 1
+
+
+        C = np.ones((num_age_groups, num_age_groups))*(1-C_mat_param)/(num_age_groups-1)
+        C[np.arange(num_age_groups), np.arange(num_age_groups)]  = C_mat_param
         C /= np.max(np.linalg.eigvals(C))
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)

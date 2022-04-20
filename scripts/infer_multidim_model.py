@@ -56,6 +56,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-C",
+    "--C_mat",
+    type=str,
+    help="Parameter of the contact-matrix",
+    default="",
+)
+
+parser.add_argument(
     "-d",
     "--draws",
     type=int,
@@ -93,8 +101,10 @@ if __name__ == "__main__":
     population_df = load_population(params.population_file, num_age_groups=9)
     population = np.squeeze(np.array(population_df))
 
+    C_mat_param = float(args.C_mat)/100.
+
     model = create_model_multidimensional(
-        cases_df, infectiability_df, N_population=population
+        cases_df, infectiability_df, N_population=population, C_mat_param=C_mat_param
     )
 
     draws = tune = args.draws
