@@ -105,7 +105,7 @@ def transpose_dataframe(df, column_choice):
     )
 
 
-def load_cases(file, begin, end, num_age_groups=3, **kwargs):
+def load_cases(file, begin, end, num_age_groups=9, **kwargs):
     cases = pd.read_csv(file, **kwargs)
     cases.rename(
         columns={"Sunday_date": "date", "Age_group": "age_group"}, inplace=True
@@ -131,7 +131,9 @@ def load_infectiability(
     waning_file,
     begin,
     end,
-    num_age_groups=3,
+    V1_eff,
+    V2_eff,
+    num_age_groups=9,
     **kwargs,
 ):
     # Returns 4 dataframes (unvaccinated_share, one_dose_share, two, three), each of the same form as the case number dfs
@@ -182,6 +184,10 @@ def load_infectiability(
     immune_1 = np.zeros(
         (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
     )
+
+    ratio1 = V1_eff/100./waning_profile[0]
+    ratio2 = V2_eff/100./waning_profile[0]
+
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
             for t_dif in range(
@@ -189,7 +195,7 @@ def load_infectiability(
             ):  # for all potential times between doses
 
                 immune_1[age, t] += (
-                    U_2[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]
+                    U_2[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]*ratio1
                 )  # Sum all vaccinations with first dose at  t - t_dif and 2nd dose later
                 # than the current time
 
@@ -202,7 +208,7 @@ def load_infectiability(
                 min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_2[age, t] += (
-                    U_3[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]
+                    U_3[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]*ratio2
                 )  # Sum all vaccinations with second dose at  t - t_dif and 3rd dose later
                 # than the current time
 
@@ -215,7 +221,7 @@ def load_infectiability(
                 min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_3[age, t] += (
-                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif]
+                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif] *ratio2
                 )
                 # Sum all vaccinations with 3rd dose at  t - t_dif and 2nd dose at some
                 # non-relevant time.
@@ -245,7 +251,7 @@ def load_infectiability(
     return 1 - (immune_1 + immune_2 + immune_3)
 
 
-def load_population(population_file, transpose=True, num_age_groups=3, **kwargs):
+def load_population(population_file, transpose=True, num_age_groups=9, **kwargs):
     population = pd.read_csv(population_file, **kwargs)
     population.rename(
         columns={"Age_group": "age_group", "Population_size": "M"}, inplace=True

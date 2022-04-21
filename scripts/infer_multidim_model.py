@@ -64,6 +64,22 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-v",
+    "--V1_eff",
+    type=str,
+    help="Efficacy of 1st shot (in percent)",
+    default="",
+)
+
+parser.add_argument(
+    "-w",
+    "--V2_eff",
+    type=str,
+    help="Efficacy of 2nd and 3rd shot (in percent)",
+    default="",
+)
+
+parser.add_argument(
     "-d",
     "--draws",
     type=int,
@@ -94,6 +110,8 @@ if __name__ == "__main__":
         params.waning_file,
         begin_infectiability,
         end,
+        V1_eff=float(args.V1_eff),
+        V2_eff=float(args.V2_eff),
         num_age_groups=9,
     )
     infectiability_df = infectiability_df

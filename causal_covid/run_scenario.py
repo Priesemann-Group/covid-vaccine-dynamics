@@ -13,6 +13,7 @@ from causal_covid.data import load_infectiability, load_population
 from causal_covid.utils import day_to_week_matrix
 from causal_covid.plotting import plot_R_and_cases, plot_R_and_cases_multidim
 
+
 def single_dimensional(
     U2,
     u3,
@@ -135,6 +136,8 @@ def multi_dimensional(
     begin_str="2020-12-20",
     end_str="2021-12-19",
     C_mat_param=71,
+    V1_eff=50,
+    V2_eff=70,
     plotting=False,
     save_dir=None,
     save_name="scenario",
@@ -157,7 +160,9 @@ def multi_dimensional(
 
     # Load trace and model of the age-group:
     file_path = os.path.join(
-        params.traces_dir, f"run-begin={begin_str}-end={end_str}-C_mat={C_mat_param}-draws={draws}.pkl",
+        params.traces_dir,
+        f"run-begin={begin_str}-end={end_str}-C_mat={C_mat_param}-"
+        f"V1_eff={V1_eff}-V2_eff={V2_eff}-draws={draws}.pkl",
     )
     with open(file_path, "rb") as f:
         loaded_stuff = pickle.load(f)
@@ -172,6 +177,8 @@ def multi_dimensional(
         params.waning_file,
         infectiability_df.index[0],
         infectiability_df.index[-1],
+        V1_eff=V1_eff,
+        V2_eff=V2_eff,
         num_age_groups=9,
     )
 
@@ -225,14 +232,21 @@ def multi_dimensional(
             axes_original = plot_R_and_cases_multidim(
                 i, fig, outer_gs[i, 0], cases_df, trace.posterior, population
             )
-            axes_scenario = plot_R_and_cases_multidim(i, fig, outer_gs[i, 1], cases_df, predictive, population)
+            axes_scenario = plot_R_and_cases_multidim(
+                i, fig, outer_gs[i, 1], cases_df, predictive, population
+            )
             axes_original[0].set_title(f"Age-group {age_group}, Observed")
             axes_scenario[0].set_title(f"Age-group {age_group}, Scenario")
-        save_path = os.path.join(save_dir, f"{save_name}_{begin_str}--{end_str}-C_mat={C_mat_param}")
+        save_path = os.path.join(
+            save_dir,
+            f"{save_name}_{begin_str}--{end_str}-C_mat={C_mat_param}-V1_eff={V1_eff}-V2_eff={V2_eff}",
+        )
         plt.savefig(save_path + ".pdf", bbox_inches="tight")
 
     median_cases = pd.DataFrame(
-        index=cases_df.index, data=np.median(predictive["weekly_cases"], axis=0), columns=age_groups,
+        index=cases_df.index,
+        data=np.median(predictive["weekly_cases"], axis=0),
+        columns=age_groups,
     )
 
     return median_cases
