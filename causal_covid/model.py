@@ -13,7 +13,6 @@ import scipy.special
 from multiprocessing import cpu_count
 
 
-
 sys.path.append("..")
 
 from .utils import get_cps, day_to_week_matrix, day_to_week_transform
@@ -32,7 +31,9 @@ from covid19_inference.model import (
 import covid19_inference
 
 
-def create_model_multidimensional(cases_df, infectiability_df, N_population, C_mat_param):
+def create_model_multidimensional(
+    cases_df, infectiability_df, N_population, C_mat_param
+):
     """
     Creates the variant model with different compartments
 
@@ -55,7 +56,6 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
 
     # This model works on the incidences instead on cases
     new_cases_obs = np.array(cases_df)
-    new_cases_obs_inci = new_cases_obs/N_population*1e6
     num_age_groups = new_cases_obs.shape[1]
 
     assert new_cases_obs.ndim == 2
@@ -64,15 +64,15 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
 
     # Params for the model
     params = {
-        "new_cases_obs": new_cases_obs_inci,
+        "new_cases_obs": new_cases_obs,
         "data_begin": data_begin,
         "data_end": data_end,
         "fcast_len": 0,
         "diff_data_sim": 14,
-        "N_population": N_population/N_population*1e6,
+        "N_population": N_population,
     }
 
-    pr_median_lambda = 2.0
+    pr_median_lambda = 1.0
 
     with Cov19Model(**params) as this_model:
 
@@ -99,7 +99,6 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
             pm.Normal("infectiability_log_diff", 0, 1, shape=infectiability_log.shape)
         ) * 1e-6 + infectiability_log
 
-
         # Get base reproduction number/spreading rate
         R_t_log_base = lambda_t_with_sigmoids(
             change_points_list=get_cps(
@@ -120,7 +119,8 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
         n_data_points_used = 2
         num_new_E_ref = (
             np.nansum(this_model.new_cases_obs[:n_data_points_used], axis=0)
-            / n_data_points_used / 7
+            / n_data_points_used
+            / 7
         )
         diff_E_begin = pm.Normal(
             f"diff_E_begin_log", mu=0, sigma=2, shape=num_age_groups
@@ -134,16 +134,17 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
 
         pm.Deterministic("E_begin", new_E_begin)
 
-        #C = np.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
-        #C = np.array([[1.0, 0.1, 0.1], [0.1, 1, 0.1], [0.1, 0.1, 1]])
+        # C = np.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        # C = np.array([[1.0, 0.1, 0.1], [0.1, 1, 0.1], [0.1, 0.1, 1]])
 
-
-        C = np.ones((num_age_groups, num_age_groups))*(1-C_mat_param)/(num_age_groups-1)
-        C[np.arange(num_age_groups), np.arange(num_age_groups)]  = C_mat_param
-        C /= np.max(np.linalg.eigvals(C))
+        rho = N_population / np.sum(N_population)
+        assert 0 <= C_mat_param <= 1
+        C = (1 - C_mat_param) * np.identity(num_age_groups) + C_mat_param * (
+            rho[:, None] @ rho[None, :]
+        ) / np.sum(rho ** 2)
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
-        new_incidence = kernelized_spread_with_interaction(
+        new_E = kernelized_spread_with_interaction(
             R_t_log=R_t_log_eff,
             interaction_matrix=C,
             num_groups=this_model.sim_shape[-1],
@@ -152,8 +153,8 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
         )  # has shape (num_days, num_age_groups)
 
         # Transform to weekly cases and add a delay of 6 days
-        weekly_incidence = day_to_week_transform(
-            new_incidence,
+        weekly_cases = day_to_week_transform(
+            new_E,
             arr_begin=this_model.sim_begin,
             arr_end=this_model.sim_end,
             weeks=cases_df.index,
@@ -161,17 +162,17 @@ def create_model_multidimensional(cases_df, infectiability_df, N_population, C_m
             additional_delay=6,
         )
 
-        pm.Deterministic("weekly_cases", weekly_incidence*N_population/1e6)
+        pm.Deterministic("weekly_cases", weekly_cases)
 
         sigma_obs = pm.HalfCauchy("sigma_obs", beta=1, shape=num_age_groups,)
         sigma = (
-            tt.abs_(weekly_incidence + 1) ** 0.5 * sigma_obs
+            tt.abs_(weekly_cases + 1) ** 0.5 * sigma_obs
         )  # offset and tt.abs to avoid nans
         data_obs = this_model.new_cases_obs
         pm.StudentT(
             name="_new_cases_studentT",
             nu=4,
-            mu=weekly_incidence[~np.isnan(data_obs)],
+            mu=weekly_cases[~np.isnan(data_obs)],
             sigma=sigma[~np.isnan(data_obs)],
             observed=data_obs[~np.isnan(data_obs)],
         )
