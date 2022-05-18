@@ -104,9 +104,10 @@ def create_model_multidimensional(
             change_points_list=get_cps(
                 this_model.data_begin,
                 this_model.sim_end,
-                interval=14,
-                pr_median_transient_len=6,
-                pr_sigma_transient_len=2,
+                interval=21,
+                pr_median_transient_len=9,
+                pr_sigma_transient_len=3,
+                pr_sigma_date_transient=4,
             ),
             pr_median_lambda_0=pr_median_lambda,
             name_lambda_t="base_R_t",
@@ -139,9 +140,17 @@ def create_model_multidimensional(
 
         rho = N_population / np.sum(N_population)
         assert 0 <= C_mat_param <= 1
-        C = (1 - C_mat_param) * np.identity(num_age_groups) + C_mat_param * (
-            rho[:, None] @ rho[None, :]
-        ) / np.sum(rho ** 2)
+
+        #rho_ext = np.concatenate([[rho[0] / 2], rho])
+        #rho_ext[1] = rho[0] / 2
+        C1 = (1 - C_mat_param) * np.identity(num_age_groups )
+        C2 = C_mat_param * (rho[:, None] @ np.ones((1, num_age_groups)))
+        #normalize_groups1 = np.identity(num_age_groups + 1)[:, 1:]
+        #normalize_groups1[0, 0] = 0.5
+        #normalize_groups1[1, 0] = 0.5
+        #normalize_groups2 = np.identity(num_age_groups + 1)[1:, :]
+        #normalize_groups2[0, 0] = 1
+        C = C1 + C2
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
         new_E = kernelized_spread_with_interaction(
@@ -150,6 +159,9 @@ def create_model_multidimensional(
             num_groups=this_model.sim_shape[-1],
             pr_new_E_begin=new_E_begin,
             pr_sigma_median_incubation=None,
+            name_new_I_t = None,
+            name_S_t=None,
+            name_new_E_t=None,
         )  # has shape (num_days, num_age_groups)
 
         # Transform to weekly cases and add a delay of 6 days

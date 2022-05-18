@@ -212,7 +212,7 @@ def multi_dimensional(
 
     # (pm.fast_sample_posterior_predictive can be replaced by
     # pm.sample_posterior_predictive if some problem should occur)
-    predictive = pm.fast_sample_posterior_predictive(
+    predictive_trace = pm.fast_sample_posterior_predictive(
         trace=trace_for_scenario,
         model=model,
         var_names=["weekly_cases", "base_R_t", "eff_R_t"],
@@ -245,8 +245,8 @@ def multi_dimensional(
 
     median_cases = pd.DataFrame(
         index=cases_df.index,
-        data=np.median(predictive["weekly_cases"], axis=0),
+        data=np.median(predictive_trace["weekly_cases"], axis=0),
         columns=age_groups,
     )
 
-    return median_cases
+    return median_cases, predictive_trace
