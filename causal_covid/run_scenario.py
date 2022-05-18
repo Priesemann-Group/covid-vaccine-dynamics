@@ -233,7 +233,7 @@ def multi_dimensional(
                 i, fig, outer_gs[i, 0], cases_df, trace.posterior, population
             )
             axes_scenario = plot_R_and_cases_multidim(
-                i, fig, outer_gs[i, 1], cases_df, predictive, population
+                i, fig, outer_gs[i, 1], cases_df, predictive_trace, population
             )
             axes_original[0].set_title(f"Age-group {age_group}, Observed")
             axes_scenario[0].set_title(f"Age-group {age_group}, Scenario")
