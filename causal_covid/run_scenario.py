@@ -249,4 +249,4 @@ def multi_dimensional(
         columns=age_groups,
     )
 
-    return median_cases, predictive_trace
+    return median_cases, predictive_trace, model, infectiability_df
