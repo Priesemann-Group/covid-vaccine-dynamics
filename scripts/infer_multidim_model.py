@@ -56,35 +56,36 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-C",
-    "--C_mat",
-    type=str,
-    help="Parameter of the contact-matrix",
-    default="",
+    "-C", "--C_mat", type=str, help="Parameter of the contact-matrix", default="",
 )
 
 parser.add_argument(
-    "-v",
-    "--V1_eff",
-    type=str,
-    help="Efficacy of 1st shot (in percent)",
-    default="",
+    "-v", "--V1_eff", type=str, help="Efficacy of 1st shot (in percent)", default="",
 )
 
 parser.add_argument(
     "-w",
     "--V2_eff",
     type=str,
-    help="Efficacy of 2nd and 3rd shot (in percent)",
+    help="Efficacy of the 2nd shot (in percent)",
     default="",
 )
 
 parser.add_argument(
-    "-d",
-    "--draws",
-    type=int,
-    help="Number of draws",
+    "-z",
+    "--V3_eff",
+    type=str,
+    help="Efficacy of the 3rd shot (in percent)",
     default="",
+)
+
+parser.add_argument(
+    "-i", "--influx", type=int, help="Influx per day in cases per million", default="",
+)
+
+
+parser.add_argument(
+    "-d", "--draws", type=int, help="Number of draws", default="",
 )
 
 if __name__ == "__main__":
@@ -112,6 +113,7 @@ if __name__ == "__main__":
         end,
         V1_eff=float(args.V1_eff),
         V2_eff=float(args.V2_eff),
+        V3_eff=float(args.V3_eff),
         num_age_groups=9,
     )
     infectiability_df = infectiability_df
@@ -119,10 +121,14 @@ if __name__ == "__main__":
     population_df = load_population(params.population_file, num_age_groups=9)
     population = np.squeeze(np.array(population_df))
 
-    C_mat_param = float(args.C_mat)/100.
+    C_mat_param = float(args.C_mat) / 100.0
 
     model = create_model_multidimensional(
-        cases_df, infectiability_df, N_population=population, C_mat_param=C_mat_param
+        cases_df,
+        infectiability_df,
+        N_population=population,
+        C_mat_param=C_mat_param,
+        influx_inci=float(args.influx),
     )
 
     draws = tune = args.draws

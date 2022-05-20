@@ -32,7 +32,7 @@ import covid19_inference
 
 
 def create_model_multidimensional(
-    cases_df, infectiability_df, N_population, C_mat_param
+    cases_df, infectiability_df, N_population, C_mat_param, influx_inci
 ):
     """
     Creates the variant model with different compartments
@@ -73,6 +73,8 @@ def create_model_multidimensional(
     }
 
     pr_median_lambda = 1.0
+
+
 
     with Cov19Model(**params) as this_model:
 
@@ -152,10 +154,13 @@ def create_model_multidimensional(
         #normalize_groups2[0, 0] = 1
         C = C1 + C2
 
+        influx = influx_inci * tt.ones(this_model.sim_shape) * this_model.N_population/1e6
+
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
         new_E = kernelized_spread_with_interaction(
             R_t_log=R_t_log_eff,
             interaction_matrix=C,
+            influx=influx,
             num_groups=this_model.sim_shape[-1],
             pr_new_E_begin=new_E_begin,
             pr_sigma_median_incubation=None,

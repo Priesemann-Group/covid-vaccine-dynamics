@@ -133,6 +133,7 @@ def load_infectiability(
     end,
     V1_eff,
     V2_eff,
+    V3_eff,
     num_age_groups=9,
     **kwargs,
 ):
@@ -187,6 +188,8 @@ def load_infectiability(
 
     ratio1 = V1_eff/100./waning_profile[0]
     ratio2 = V2_eff/100./waning_profile[0]
+    ratio3 = V3_eff/100./waning_profile[0]
+
 
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
@@ -221,7 +224,7 @@ def load_infectiability(
                 min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_3[age, t] += (
-                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif] *ratio2
+                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif] *ratio3
                 )
                 # Sum all vaccinations with 3rd dose at  t - t_dif and 2nd dose at some
                 # non-relevant time.

@@ -12,4 +12,4 @@ filelock>=3.2.0
 tabulate
 statsmodels
 cachetools<5.0.0
-covid19_inference@git+https://github.com/Priesemann-Group/covid19_inference@9e208fb94ebc39acafda10c70fcfa8a877a79a4c#egg=covid19_inference
+covid19_inference@git+https://github.com/Priesemann-Group/covid19_inference@78312fa622863f0d2eaa01ec8aa93f1586a9657d#egg=covid19_inference

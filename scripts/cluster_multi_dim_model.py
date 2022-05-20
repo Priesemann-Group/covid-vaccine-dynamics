@@ -32,10 +32,12 @@ begin_end = [(("2020-12-20", "2021-12-19"))]
 
 
 #draws = [100, 500]
-draws = [200, 500]
+draws = [500, 200, 500]
 
-C_mat = [40, 80, 90]
-vacc_eff = [(50, 70), (70, 90)]
+C_mat = [40, 60, 80]
+#vacc_eff = [(50, 70), (70, 90)]
+vacc_eff = [(70,90,95)]
+influx = [1, 2]
 
 mapping = []
 
@@ -43,12 +45,14 @@ for be in begin_end:
     for d in draws:
         for c in C_mat:
             for v in vacc_eff:
-                ma = []
-                ma.append(be)
-                ma.append(d)
-                ma.append(c)
-                ma.append(v)
-                mapping.append(tuple(ma))
+                for inf in influx:
+                    ma = []
+                    ma.append(be)
+                    ma.append(d)
+                    ma.append(c)
+                    ma.append(v)
+                    ma.append(inf)
+                    mapping.append(tuple(ma))
 
 
 mapping_clustered = []
@@ -71,13 +75,15 @@ def exec(args_list):
     """
     Executes python script
     """
-    (begin_end, draws, C, Vacc_eff) = args_list
+    (begin_end, draws, C, Vacc_eff, influx) = args_list
     os.system(
         f"python infer_multidim_model.py "
         f"-b {begin_end[0]} -e {begin_end[1]} "
         f"--C_mat {C} "
         f"--V1_eff {Vacc_eff[0]} "
         f"--V2_eff {Vacc_eff[1]} "
+        f"--V3_eff {Vacc_eff[2]} "
+        f"--influx {influx} "
         f"-d {draws} "
     )
 

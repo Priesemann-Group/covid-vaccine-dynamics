@@ -138,6 +138,8 @@ def multi_dimensional(
     C_mat_param=71,
     V1_eff=50,
     V2_eff=70,
+    V3_eff=95,
+    influx=1,
     plotting=False,
     save_dir=None,
     save_name="scenario",
@@ -162,7 +164,7 @@ def multi_dimensional(
     file_path = os.path.join(
         params.traces_dir,
         f"run-begin={begin_str}-end={end_str}-C_mat={C_mat_param}-"
-        f"V1_eff={V1_eff}-V2_eff={V2_eff}-draws={draws}.pkl",
+        f"V1_eff={V1_eff}-V2_eff={V2_eff}-V3_eff={V3_eff}-influx={influx}-draws={draws}.pkl",
     )
     with open(file_path, "rb") as f:
         loaded_stuff = pickle.load(f)
@@ -179,6 +181,7 @@ def multi_dimensional(
         infectiability_df.index[-1],
         V1_eff=V1_eff,
         V2_eff=V2_eff,
+        V3_eff=V3_eff,
         num_age_groups=9,
     )
 
