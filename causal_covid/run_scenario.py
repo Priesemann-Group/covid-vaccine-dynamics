@@ -144,6 +144,7 @@ def multi_dimensional(
     save_dir=None,
     save_name="scenario",
     draws=500,
+    waning_file=None,
 ):
     age_groups = [
         "0-19",
@@ -176,7 +177,7 @@ def multi_dimensional(
         params.population_file,
         U2,
         u3,
-        params.waning_file,
+        waning_file if waning_file is not None else params.waning_file,
         infectiability_df.index[0],
         infectiability_df.index[-1],
         V1_eff=V1_eff,
