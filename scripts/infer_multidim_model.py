@@ -121,13 +121,12 @@ if __name__ == "__main__":
     population_df = load_population(params.population_file, num_age_groups=9)
     population = np.squeeze(np.array(population_df))
 
-    C_mat_param = float(args.C_mat) / 100.0
 
     model = create_model_multidimensional(
         cases_df,
         infectiability_df,
         N_population=population,
-        C_mat_param=C_mat_param,
+        C_mat_param=args.C_mat,
         influx_inci=float(args.influx),
     )
 

@@ -15,6 +15,8 @@ observed_U3_file = (
 
 traces_dir = "../data/traces/"
 
+contact_matrix_dir = "../data/mistri_contact_matrices"
+
 current_dirname = os.path.dirname(__file__)
 
 def make_path_abs(dir):
@@ -27,3 +29,4 @@ population_file=make_path_abs(population_file)
 observed_U2_file=make_path_abs(observed_U2_file)
 observed_U3_file=make_path_abs(observed_U3_file)
 traces_dir=make_path_abs(traces_dir)
+contact_matrix_dir=make_path_abs(contact_matrix_dir)

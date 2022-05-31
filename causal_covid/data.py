@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import os
+
+from causal_covid import params
 
 
 def sum_age_groups(df, num_age_groups):
@@ -186,10 +189,9 @@ def load_infectiability(
         (len(vaccinations.age_group.unique()), len(vaccinations.date.unique()))
     )
 
-    ratio1 = V1_eff/100./waning_profile[0]
-    ratio2 = V2_eff/100./waning_profile[0]
-    ratio3 = V3_eff/100./waning_profile[0]
-
+    ratio1 = V1_eff / 100.0 / waning_profile[0]
+    ratio2 = V2_eff / 100.0 / waning_profile[0]
+    ratio3 = V3_eff / 100.0 / waning_profile[0]
 
     for age in range(len(vaccinations.age_group.unique())):
         for t in range(len(vaccinations.date.unique())):
@@ -198,7 +200,7 @@ def load_infectiability(
             ):  # for all potential times between doses
 
                 immune_1[age, t] += (
-                    U_2[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]*ratio1
+                    U_2[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif] * ratio1
                 )  # Sum all vaccinations with first dose at  t - t_dif and 2nd dose later
                 # than the current time
 
@@ -211,7 +213,7 @@ def load_infectiability(
                 min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_2[age, t] += (
-                    U_3[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif]*ratio2
+                    U_3[age, t - t_dif, t + 1 :].sum() * waning_profile[t_dif] * ratio2
                 )  # Sum all vaccinations with second dose at  t - t_dif and 3rd dose later
                 # than the current time
 
@@ -224,7 +226,7 @@ def load_infectiability(
                 min(t + 1, len(waning_profile) + 1)
             ):  # for all potential times between doses
                 immune_3[age, t] += (
-                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif] *ratio3
+                    U_3[age, :-1, t - t_dif].sum() * waning_profile[t_dif] * ratio3
                 )
                 # Sum all vaccinations with 3rd dose at  t - t_dif and 2nd dose at some
                 # non-relevant time.
@@ -269,3 +271,66 @@ def load_population(population_file, transpose=True, num_age_groups=9, **kwargs)
             columns=population.age_group,
         )
     return population
+
+
+def coarse_grain_contact_matrix(M, age_distr, population_arr):
+    # M_norm = M / age_distr
+    M_new = np.zeros((9, 9))
+    indices = (
+        (0, 20),
+        (20, 30),
+        (30, 40),
+        (40, 50),
+        (50, 60),
+        (60, 70),
+        (70, 80),
+        (80, 85),
+        (80, 85),
+    )
+    for i, ind1 in enumerate(indices):
+        for j, ind2 in enumerate(indices):
+            # M_new[i, j] = np.mean(np.sum(M_norm[ind1[0] : ind1[1], ind2[0] : ind2[1]], axis=0), axis=0)
+            M_new[i, j] = (
+                np.sum(M[slice(*ind2), slice(*ind1)] * age_distr[slice(*ind2)][:, None])
+                / np.sum(age_distr[slice(*ind2)])
+                / np.sum(age_distr[slice(*ind1)])
+                * population_arr[i]
+            )
+    # M_new *= population_arr[:,None]
+    return M_new / np.sum(M_new, axis=0)  # / population_arr[:,None]
+
+
+def load_contact_matrix_mistri(C_param, population_arr):
+
+    assert C_param in ("original", "half-school", "quarter-school")
+
+    age_distribution = np.loadtxt(
+        os.path.join(
+            params.contact_matrix_dir,
+            "age_distributions/Israel_country_level_age_distribution_85.csv",
+        ),
+        delimiter=",",
+    )[:, 1]
+
+    load_M_setting = lambda setting: np.loadtxt(
+        os.path.join(
+            params.contact_matrix_dir,
+            f"contact_matrices/Israel_country_level_F_{setting}_setting_85.csv",
+        ),
+        delimiter=",",
+    )
+    M_commun = load_M_setting("community")
+    M_house = load_M_setting("household")
+    M_school = load_M_setting("school")
+    M_work = load_M_setting("work")
+
+    if C_param == "original":
+        M_full = 4.11 * M_house + 11.41 * M_school + 8.07 * M_work + 2.79 * M_commun
+    if C_param == "half-school":
+        M_full = 4.11 * M_house + 11.41 / 2 * M_school + 8.07 * M_work + 2.79 * M_commun
+    if C_param == "quarter-school":
+        M_full = 4.11 * M_house + 11.41 / 4 * M_school + 8.07 * M_work + 2.79 * M_commun
+
+    M = coarse_grain_contact_matrix(M_full, age_distribution, population_arr)
+
+    return M

@@ -26,6 +26,7 @@ from covid19_inference.model import (
     delay_cases,
     uncorrelated_prior_E,
 )
+from causal_covid.data import load_contact_matrix_mistri
 
 
 import covid19_inference
@@ -141,18 +142,22 @@ def create_model_multidimensional(
         # C = np.array([[1.0, 0.1, 0.1], [0.1, 1, 0.1], [0.1, 0.1, 1]])
 
         rho = N_population / np.sum(N_population)
-        assert 0 <= C_mat_param <= 1
 
         #rho_ext = np.concatenate([[rho[0] / 2], rho])
         #rho_ext[1] = rho[0] / 2
-        C1 = (1 - C_mat_param) * np.identity(num_age_groups )
-        C2 = C_mat_param * (rho[:, None] @ np.ones((1, num_age_groups)))
-        #normalize_groups1 = np.identity(num_age_groups + 1)[:, 1:]
-        #normalize_groups1[0, 0] = 0.5
-        #normalize_groups1[1, 0] = 0.5
-        #normalize_groups2 = np.identity(num_age_groups + 1)[1:, :]
-        #normalize_groups2[0, 0] = 1
-        C = C1 + C2
+        if C_mat_param in ("original", "half-school", "quarter-school"):
+            C = load_contact_matrix_mistri(C_mat_param, N_population)
+        else:
+            C_mat_param = float(C_mat_param) / 100.0
+            assert 0 <= C_mat_param <= 1
+            C1 = (1 - C_mat_param) * np.identity(num_age_groups )
+            C2 = C_mat_param * (rho[:, None] @ np.ones((1, num_age_groups)))
+            #normalize_groups1 = np.identity(num_age_groups + 1)[:, 1:]
+            #normalize_groups1[0, 0] = 0.5
+            #normalize_groups1[1, 0] = 0.5
+            #normalize_groups2 = np.identity(num_age_groups + 1)[1:, :]
+            #normalize_groups2[0, 0] = 1
+            C = C1 + C2
 
         influx = influx_inci * tt.ones(this_model.sim_shape) * this_model.N_population/1e6
 
@@ -363,3 +368,5 @@ def create_model_single_dimension_infectiability(
         )
 
         return this_model
+
+
