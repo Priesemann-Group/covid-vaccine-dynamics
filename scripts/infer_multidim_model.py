@@ -80,7 +80,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-i", "--influx", type=int, help="Influx per day in cases per million", default="",
+    "-i", "--influx", type=str, help="Influx per day in cases per million", default="",
 )
 
 

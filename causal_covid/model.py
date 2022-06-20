@@ -12,7 +12,6 @@ import numpy as np
 import scipy.special
 from multiprocessing import cpu_count
 
-
 sys.path.append("..")
 
 from .utils import get_cps, day_to_week_matrix, day_to_week_transform
@@ -28,9 +27,7 @@ from covid19_inference.model import (
 )
 from causal_covid.data import load_contact_matrix_mistri
 
-
 import covid19_inference
-
 
 def create_model_multidimensional(
     cases_df, infectiability_df, N_population, C_mat_param, influx_inci
@@ -92,9 +89,11 @@ def create_model_multidimensional(
             data_begin - datetime.timedelta(days=7),
         ] + list(infectiability_df.index)
 
-        infectiability_log = day_to_week_matrix(
+        M_day_to_week = day_to_week_matrix(
             this_model.sim_begin, this_model.sim_end, weeks
-        ).dot(infectiability_log)
+        )
+
+        infectiability_log = M_day_to_week.dot(infectiability_log)
 
         # This assures that the infectiability can be changed in other scenarios
         # But won't change the inference as the normal distribution is very small
@@ -158,8 +157,27 @@ def create_model_multidimensional(
             #normalize_groups2 = np.identity(num_age_groups + 1)[1:, :]
             #normalize_groups2[0, 0] = 1
             C = C1 + C2
+        if influx_inci < 1:
+            k_influx=0.3
+            scale_influx = (
+                influx_inci / scipy.special.gamma(1 + 1 / k_influx)
+            )  # to allow the parametrization by the influx_inci parameter
+            influx_weeks = (
+                pm.Weibull(
+                    "influx_weekly",
+                    alpha=k_influx,
+                    beta=1.0,
+                    shape=(M_day_to_week.shape[1], num_age_groups),
+                )
+            ) * scale_influx * this_model.N_population/1e6
 
-        influx = influx_inci * tt.ones(this_model.sim_shape) * this_model.N_population/1e6
+            M_day_to_week = tt.as_tensor_variable(day_to_week_matrix(
+                this_model.sim_begin, this_model.sim_end, weeks
+            ))
+            influx = M_day_to_week.dot(influx_weeks)
+
+        else:
+            influx = influx_inci * tt.ones(this_model.sim_shape) * this_model.N_population/1e6
 
         # Put the lambdas together unknown and known into one tensor (shape: t,v)
         new_E = kernelized_spread_with_interaction(

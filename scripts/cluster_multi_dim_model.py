@@ -34,10 +34,16 @@ begin_end = [(("2020-12-20", "2021-12-19"))]
 #draws = [100, 500]
 draws = [500, 200, 500]
 
-C_mat = [40, 60, 80]
+#C_mat = [40, 60, 80]
+#C_mat = [20, 95, 100]
+#C_mat= ["original", "half-school", "quarter-school"]
+#C_mat = [40,60,80,95, "original"]
+C_mat = [70,80,90]
 #vacc_eff = [(50, 70), (70, 90)]
+#vacc_eff = [(50, 70,70), (70,90,95)]
 vacc_eff = [(70,90,95)]
-influx = [1, 2]
+#influx = [1]
+influx = [0.1,0.5]
 
 mapping = []
 

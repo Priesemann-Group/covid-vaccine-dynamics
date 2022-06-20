@@ -243,7 +243,8 @@ def multi_dimensional(
             axes_scenario[0].set_title(f"Age-group {age_group}, Scenario")
         save_path = os.path.join(
             save_dir,
-            f"{save_name}_{begin_str}--{end_str}-C_mat={C_mat_param}-V1_eff={V1_eff}-V2_eff={V2_eff}",
+            f"{save_name}_{begin_str}--{end_str}-C_mat={C_mat_param}-"
+            f"V1_eff={V1_eff}-V2_eff={V2_eff}-V3_eff={V3_eff}-influx={influx}",
         )
         plt.savefig(save_path + ".pdf", bbox_inches="tight")
 
