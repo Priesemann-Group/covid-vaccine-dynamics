@@ -2,6 +2,7 @@ import pickle
 import os
 import sys
 import datetime
+import gzip
 
 import numpy as np
 import pymc3 as pm
@@ -145,6 +146,7 @@ def multi_dimensional(
     save_name="scenario",
     draws=500,
     waning_file=None,
+    compressed=False,
 ):
     age_groups = [
         "0-19",
@@ -165,11 +167,16 @@ def multi_dimensional(
     file_path = os.path.join(
         params.traces_dir,
         f"run-begin={begin_str}-end={end_str}-C_mat={C_mat_param}-"
-        f"V1_eff={V1_eff}-V2_eff={V2_eff}-V3_eff={V3_eff}-influx={influx}-draws={draws}.pkl",
+        f"V1_eff={V1_eff}-V2_eff={V2_eff}-V3_eff={V3_eff}-influx={influx}-draws={draws}",
     )
-    with open(file_path, "rb") as f:
-        loaded_stuff = pickle.load(f)
-    cases_df, infectiability_df, model, trace = loaded_stuff
+    if not compressed:
+        with open(file_path + ".pkl", "rb") as f:
+            loaded_stuff = pickle.load(f)
+        cases_df, infectiability_df, model, trace = loaded_stuff
+    else:
+        with gzip.open(file_path + ".zip", "rb") as f:
+            loaded_stuff = pickle.load(f)
+        cases_df, infectiability_df, model, trace = loaded_stuff
 
     # Load the vaccination file of the scenario and calculate the changed infectiability:
     infectiability_scenario_df = load_infectiability(
